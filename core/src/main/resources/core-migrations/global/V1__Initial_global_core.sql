@@ -84,6 +84,7 @@ INSERT IGNORE INTO property_map VALUES ("TIME_PLAYED", "long");
 INSERT IGNORE INTO property_map VALUES ("COOLDOWN_SOUNDS_ENABLED", "boolean");
 
 -- Profession properties
+INSERT IGNORE INTO property_map VALUES ("TOTAL_LOGS_CHOPPED", "long");
 INSERT IGNORE INTO property_map VALUES ("TOTAL_ORES_MINED", "long");
 INSERT IGNORE INTO property_map VALUES ("TOTAL_FISH_CAUGHT", "long");
 INSERT IGNORE INTO property_map VALUES ("TOTAL_WEIGHT_CAUGHT", "long");
@@ -97,6 +98,7 @@ INSERT IGNORE INTO property_map VALUES ("LAST_TNTED", "long");
 INSERT IGNORE INTO property_map VALUES ("MAP_POINTS_OF_INTEREST", "boolean");
 INSERT IGNORE INTO property_map VALUES ("MAP_PLAYER_NAMES", "boolean");
 INSERT IGNORE INTO property_map VALUES ("SIDEBAR_ENABLED", "boolean");
+INSERT IGNORE INTO property_map VALUES ("TERRITORY_POPUPS_ENABLED", "boolean");
 INSERT IGNORE INTO property_map VALUES ("CLAN_MENU_ENABLED", "boolean");
 INSERT IGNORE INTO property_map VALUES ("ENERGY", "int");
 INSERT IGNORE INTO property_map VALUES ("LEVEL", "int");
