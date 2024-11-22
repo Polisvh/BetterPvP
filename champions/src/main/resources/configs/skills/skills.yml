@@ -30,9 +30,9 @@ skills:
     viperstrikes:
       enabled: true
       maxlevel: 3
-      baseSeconds: 3.0
-      baseDuration: 3.0
-      durationIncreasePerLevel: 1.5
+      baseSeconds: 2.5
+      baseDuration: 2.5
+      durationIncreasePerLevel: 1.25
       poisonStrength: 1
     backstab:
       enabled: true
@@ -76,7 +76,7 @@ skills:
       enabled: true
       maxlevel: 3
       damageIncrement: 0.5
-      duration: 1.0
+      duration: 2.0
       baseDamageIncrement: 1.0
     concussion:
       enabled: true
