@@ -56,8 +56,8 @@ public class ViperStrikes extends Skill implements PassiveSkill, Listener, Debuf
 
     @Override
     public void loadSkillConfig() {
-        baseDuration = getConfig("baseDuration", 3.0, Double.class);
-        durationIncreasePerLevel = getConfig("durationIncreasePerLevel", 1.5, Double.class);
+        baseDuration = getConfig("baseDuration", 2.5, Double.class);
+        durationIncreasePerLevel = getConfig("durationIncreasePerLevel", 1.25, Double.class);
         poisonStrength = getConfig("poisonStrength", 1, Integer.class);
     }
 
