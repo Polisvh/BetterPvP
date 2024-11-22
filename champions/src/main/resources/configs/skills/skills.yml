@@ -30,16 +30,16 @@ skills:
     viperstrikes:
       enabled: true
       maxlevel: 3
-      baseSeconds: 2.0
-      baseDuration: 2.0
-      durationIncreasePerLevel: 2.0
+      baseSeconds: 3.0
+      baseDuration: 3.0
+      durationIncreasePerLevel: 1.5
       poisonStrength: 1
     backstab:
       enabled: true
       maxlevel: 3
-      damageIncreasePerLevel: 1.5
-      baseDamage: 1.5
-      increasePerLevel: 1.5
+      damageIncreasePerLevel: 1.0
+      baseDamage: 2.0
+      increasePerLevel: 1.0
     smokebomb:
       enabled: true
       cooldown: 40.0
@@ -75,8 +75,8 @@ skills:
     comboattack:
       enabled: true
       maxlevel: 3
-      damageIncrement: 1.0
-      duration: 2.0
+      damageIncrement: 0.5
+      duration: 1.0
       baseDamageIncrement: 1.0
     concussion:
       enabled: true
@@ -108,11 +108,11 @@ skills:
       durationPerLevel: 0.5
     blink:
       enabled: true
-      cooldown: 13.0
+      cooldown: 11.0
       maxlevel: 5
       maxTravelDistance: 9
       canUseWhileSlowed: false
-      cooldownDecreasePerLevel: 1.0
+      cooldownDecreasePerLevel: 0.0
       distanceIncreasePerLevel: 3
       deblinkTime: 4
       deblinkTimeIncreasePerLevel: 0
