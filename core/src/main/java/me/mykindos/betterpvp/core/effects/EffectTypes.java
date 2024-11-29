@@ -85,6 +85,7 @@ public class EffectTypes {
     public static final EffectType ENERGY_REDUCTION = createEffectType(new EnergyReductionEffect());
     public static final EffectType ATTACK_SPEED = createEffectType(new AttackSpeedEffect());
     public static final EffectType JUMP_BOOST = createEffectType(new JumpBoostEffect());
+    public static final EffectType FREEZING = createEffectType(new FreezingEffect());
 
     // </editor-fold>
 
