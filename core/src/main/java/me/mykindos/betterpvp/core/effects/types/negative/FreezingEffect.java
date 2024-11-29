@@ -5,7 +5,7 @@ import me.mykindos.betterpvp.core.effects.VanillaEffectType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffectType;
 
-public class FreezingEffect extends VanillaEffectType {
+public class FreezingEffect extends EffectType {
 
     @Override
     public String getName() {
@@ -18,7 +18,7 @@ public class FreezingEffect extends VanillaEffectType {
     }
 
     @Override
-    public PotionEffectType getVanillaPotionType() {
+    public PotionEffectType getEffectType() {
         // For freezing, we don't actually use a vanilla potion effect, but this could be used for slowness if desired
         return PotionEffectType.SLOWNESS; // You could also use a custom effect, but this is for slowness
     }
