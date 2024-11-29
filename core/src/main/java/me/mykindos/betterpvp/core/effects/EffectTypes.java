@@ -67,6 +67,7 @@ public class EffectTypes {
     public static final EffectType DARKNESS = createEffectType(new DarknessEffect());
     public static final EffectType FROZEN = createEffectType(new FrozenEffect());
     public static final EffectType ANTI_HEAL = createEffectType(new AntiHealEffect());
+    public static final EffectType FREEZING = createEffectType(new FreezingEffect());
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Positive Effect Types">
@@ -85,7 +86,6 @@ public class EffectTypes {
     public static final EffectType ENERGY_REDUCTION = createEffectType(new EnergyReductionEffect());
     public static final EffectType ATTACK_SPEED = createEffectType(new AttackSpeedEffect());
     public static final EffectType JUMP_BOOST = createEffectType(new JumpBoostEffect());
-    public static final EffectType FREEZING = createEffectType(new FreezingEffect());
 
     // </editor-fold>
 
