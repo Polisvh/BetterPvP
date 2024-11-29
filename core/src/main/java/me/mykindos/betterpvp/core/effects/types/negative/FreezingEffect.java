@@ -1,5 +1,6 @@
 package me.mykindos.betterpvp.core.effects.types.negative;
 
+import me.mykindos.betterpvp.core.effects;
 import me.mykindos.betterpvp.core.effects.Effect;
 import me.mykindos.betterpvp.core.effects.VanillaEffectType;
 import org.bukkit.entity.LivingEntity;
