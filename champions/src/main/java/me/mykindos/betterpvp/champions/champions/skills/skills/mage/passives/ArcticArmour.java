@@ -1,13 +1,3 @@
-
-Sure! To align the second version (freeze) with the first version (slow) for cooldown management, water-to-ice conversion, and energy usage, I'll update the freeze code to:
-
-Incorporate cooldown logic (e.g., audio, snowAura) similar to slow.
-Add the water-to-ice conversion logic present in slow.
-Use the same energy management logic, including periodic energy checks and consumption.
-Here’s the updated freeze code:
-
-java
-Skopiuj kod
 package me.mykindos.betterpvp.champions.champions.skills.skills.mage.passives;
 
 import com.google.inject.Inject;
