@@ -1,23 +1,24 @@
 package me.mykindos.betterpvp.core.effects.listeners.effects;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import me.mykindos.betterpvp.core.effects.Effect;
 import me.mykindos.betterpvp.core.effects.EffectManager;
 import me.mykindos.betterpvp.core.effects.EffectTypes;
 import me.mykindos.betterpvp.core.listener.BPvPListener;
+import me.mykindos.betterpvp.core.framework.updater.UpdateEvent;
+import org.bukkit.Sound;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+import org.bukkit.event.entity.EntityDamageEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.ProtocolManager;
 
-import java.util.Optional;
+import java.util.Set;
 
 @BPvPListener
 @Singleton
@@ -30,61 +31,51 @@ public class FreezingListener implements Listener {
         this.effectManager = effectManager;
     }
 
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onFreezeEffect(CustomDamageEvent event) {
-        if (!(event.getDamagee() instanceof Player player)) return;
+    // Apply frost damage every 1.5 seconds (30 ticks) to players affected by the "FREEZING" effect
+    @UpdateEvent(delay = 30)
+    public void applyFrostDamage() {
+        // Get all entities affected by the "FREEZING" effect
+        Set<LivingEntity> affectedEntities = effectManager.getEntitiesWithEffect(EffectTypes.FREEZING);
 
-        // Check if the player has the "frozen" effect
-        Optional<Effect> effectOptional = effectManager.getEffect(player, EffectTypes.FROZEN);
-        effectOptional.ifPresent(effect -> {
-            // Apply Slowness I effect to the player
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20, 0, false, false, false));
-
-            // Send freeze ticks metadata (blue hearts)
-            sendFreezeTicks(player, 100); // Freeze progress set to 100 (adjust as needed)
-
-            // Send the frost overlay to the player
-            sendFrostOverlay(player);
-
-            // Optional: Apply damage or custom logic based on the frozen effect
-            // Example: Slow freezing damage
-            if (player.getFreezeTicks() >= 140) { // Fully frozen state
-                event.setDamage(event.getDamage() + 2.0); // Deal 2 extra damage
-            }
-        });
-    }
-
-    private void sendFreezeTicks(Player player, int freezeTicks) {
-        try {
-            // Create metadata packet to set freeze ticks
-            PacketContainer metadataPacket = ProtocolLibrary.getProtocolManager()
-                .createPacket(PacketType.Play.Server.ENTITY_METADATA);
-
-            metadataPacket.getIntegers().write(0, player.getEntityId()); // Entity ID of the player
-            
-            // Use WrappedDataWatcher to modify metadata
-            WrappedDataWatcher watcher = new WrappedDataWatcher();
-            WrappedDataWatcher.WrappedDataWatcherObject freezeTicksIndex = 
-                new WrappedDataWatcher.WrappedDataWatcherObject(17, WrappedDataWatcher.Registry.get(Integer.class)); // Index 17 is typically freeze ticks
-            watcher.setObject(freezeTicksIndex, freezeTicks);
-
-            metadataPacket.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
-            ProtocolLibrary.getProtocolManager().sendServerPacket(player, metadataPacket);
-        } catch (Exception e) {
-            e.printStackTrace();
+        for (LivingEntity entity : affectedEntities) {
+            // Apply 1 damage to each entity affected by the freezing effect
+            entity.damage(1.0); // Deals 1 damage every 1.5 seconds (30 ticks)
         }
     }
 
-    private void sendFrostOverlay(Player player) {
+    @EventHandler
+    public void onReceiveFreezingEffect(EffectReceiveEvent event) {
+        // Check if the effect is "FREEZING"
+        if (event.isCancelled()) return;
+        if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
+            LivingEntity target = event.getTarget();
+
+            // Send custom packets for the "FREEZING" effect (powder snow effect)
+            if (target instanceof Player player) {
+                // Send the effect packet that simulates the "FREEZING" effect (like being in powder snow)
+                sendFreezingPackets(player);
+
+                // Play the glass-breaking sound **only** when receiving the effect
+                player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 2.0f);
+            }
+        }
+    }
+
+    // This method sends the necessary packets to the player for the visual freezing effect
+    private void sendFreezingPackets(Player player) {
         try {
-            // Create overlay packet to send frost screen effect
-            PacketContainer overlayPacket = ProtocolLibrary.getProtocolManager()
-                .createPacket(PacketType.Play.Server.SET_OVERLAY);
-            // Set the overlay to powder snow
+            // Create and send the packet to apply the powder snow overlay (freezing screen effect)
+            PacketContainer overlayPacket = new PacketContainer(PacketType.Play.Server.SET_OVERLAY);
+            
+            // Setting the overlay to powder snow (value 1 corresponds to powder snow screen overlay)
             overlayPacket.getSpecificModifier(int.class).write(0, 1); // 1 corresponds to powder snow overlay
+            
+            // Send the packet to the player to apply the freezing effect (screen overlay)
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, overlayPacket);
+
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Handle any errors that occur while sending the packet
         }
     }
 }
+
