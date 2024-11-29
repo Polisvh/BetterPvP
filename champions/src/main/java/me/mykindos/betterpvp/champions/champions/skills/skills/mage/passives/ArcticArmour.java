@@ -1,3 +1,13 @@
+
+Sure! To align the second version (freeze) with the first version (slow) for cooldown management, water-to-ice conversion, and energy usage, I'll update the freeze code to:
+
+Incorporate cooldown logic (e.g., audio, snowAura) similar to slow.
+Add the water-to-ice conversion logic present in slow.
+Use the same energy management logic, including periodic energy checks and consumption.
+Here’s the updated freeze code:
+
+java
+Skopiuj kod
 package me.mykindos.betterpvp.champions.champions.skills.skills.mage.passives;
 
 import com.google.inject.Inject;
@@ -33,10 +43,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityDamageEvent;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Singleton
 @BPvPListener
@@ -49,9 +56,13 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
     private double baseDuration;
     private double durationIncreasePerLevel;
     private int resistanceStrength;
-    private int slownessStrength;
-    private double slowDuration;
-    private double slowDurationIncreasePerLevel;
+    
+    private double freezeDuration;
+    private double freezeTimeRequired;
+    private double freezeDurationIncreasePerLevel;
+    private double freezeTimeRequiredDecreasePerLevel;
+
+    private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
 
     @Inject
     public ArcticArmour(Champions champions, ChampionsManager championsManager, WorldBlockHandler blockHandler) {
@@ -73,13 +84,13 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
                 "you in a " + getValueString(this::getRadius, level) + " Block radius",
                 "",
                 "Allies inside this area receive <effect>Resistance " + UtilFormat.getRomanNumeral(resistanceStrength) + "</effect>, and",
-                "enemies hit by you receive <effect>Slowness " + UtilFormat.getRomanNumeral(slownessStrength) + "</effect> for",
-                getValueString(this::getSlowDuration, level) + " seconds",
+                "enemies that remain in the area for " + getValueString(this::getFreezeTimeRequired, level) + " seconds <effect>freeze</effect> for",
+                getValueString(this::getFreezeDuration, level) + " seconds",
                 "",
                 "Uses " + getValueString(this::getEnergyStartCost, level) + " energy on activation",
-                "Energy / Second: " + getValueString(this::getEnergy, level),
-                "",
+                "Energy / Second: " + getValueString(this::getEnergy, level)
                 EffectTypes.RESISTANCE.getDescription(resistanceStrength)
+                EffectTypes.FREEZING.getGenericDescription()
         };
     }
 
@@ -90,10 +101,12 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
     public double getDuration(int level) {
         return baseDuration + ((level - 1) * durationIncreasePerLevel);
     }
-    public double getSlowDuration(int level) {
-        return slowDuration + ((level-1) * slowDurationIncreasePerLevel);
+    public double getFreezeDuration(int level) {
+        return freezeDuration + ((level - 1) * freezeDurationIncreasePerLevel);
     }
-
+    public double getFreezeTimeRequired(int level) {
+        return freezeTimeRequired - ((level - 1) * freezeTimeRequiredDecreasePerLevel);
+    }
     @Override
     public Role getClassType() {
         return Role.MAGE;
@@ -141,11 +154,34 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
 
             if (friendly) {
                 championsManager.getEffects().addEffect(target, EffectTypes.RESISTANCE, resistanceStrength, 1000);
+            } else {
+                manageFreezeEffect(player, target);
             }
         }
         return true;
     }
 
+    
+    private void manageFreezeEffect(Player player, Player target) {
+        UUID targetId = target.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+
+        if (!playersInRangeTimer.containsKey(targetId)) {
+            playersInRangeTimer.put(targetId, currentTime);
+        } else {
+            long timeInRange = currentTime - playersInRangeTimer.get(targetId);
+            if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000) {
+                championsManager.getEffects().addEffect(target, EffectTypes.FREEZE, getFreezeDuration(getLevel(player)), 1000);
+                playersInRangeTimer.remove(targetId);
+            }
+        }
+
+        if (target.getLocation().distance(player.getLocation()) > getRadius(getLevel(player))) {
+            playersInRangeTimer.remove(targetId);
+        }
+    }
+
+    
     private void snowAura(Player player) {
 
         int level = getLevel(player);
@@ -230,19 +266,7 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         }
 
     }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onDamage(CustomDamageEvent event){
-        if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
-        if (!(event.getDamager() instanceof Player player)) return;
-        if (!active.contains(player.getUniqueId())) return;
-
-        int level = getLevel(player);
-        if (level > 0){
-            championsManager.getEffects().addEffect(event.getDamagee(), player, EffectTypes.SLOWNESS, slownessStrength, 1000);
-        }
-    }
-
+    
     @Override
     public void loadSkillConfig() {
         baseRadius = getConfig("baseRadius", 4, Integer.class);
@@ -251,9 +275,11 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         durationIncreasePerLevel = getConfig("durationIncreasePerLevel", 0.0, Double.class);
 
         resistanceStrength = getConfig("resistanceStrength", 1, Integer.class);
-        slownessStrength = getConfig("slownessStrength", 1, Integer.class);
-        slowDuration = getConfig("slowDuration", 2.0, Double.class);
-        slowDurationIncreasePerLevel = getConfig("slowDurationIncreasePerLevel", 0.5, Double.class);
+        
+        freezeDuration = getConfig("freezeDuration", 4.0, Double.class);
+        freezeTimeRequired = getConfig("freezeTimeRequired", 5.0, Double.class);
+        freezeDurationIncreasePerLevel = getConfig("freezeDurationIncreasePerLevel", 0.0, Double.class);
+        freezeTimeRequiredDecreasePerLevel = getConfig("freezeTimeRequiredDecreasePerLevel", 1.0, Double.class);
     }
 
 
