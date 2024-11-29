@@ -56,7 +56,7 @@ public class FreezingListener implements Listener {
                 sendFreezingPackets(player);
 
                 // Play the glass-breaking sound **only** when receiving the effect
-                player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 2.0f);
+                player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 0.0f);
             }
         }
     }
