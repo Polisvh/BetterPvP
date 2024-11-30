@@ -157,6 +157,7 @@ private void manageFreezeEffect(Player player, Player target) {
     long currentTime = System.currentTimeMillis();
     long freezeGracePeriod = (long) getFreezeDuration(getLevel(player)) * 1000L; // Use getLevel(player)
 
+    // Check if the player is in the grace period after being frozen
     if (freezeCooldownTimer.containsKey(targetId)) {
         long timeSinceLeft = currentTime - freezeCooldownTimer.get(targetId);
         if (timeSinceLeft < freezeGracePeriod) {
@@ -168,29 +169,32 @@ private void manageFreezeEffect(Player player, Player target) {
         }
     }
 
-    // Handle the freeze countdown logic
+    // Handle the freeze countdown logic when the player is in the freezing range
     if (!playersInRangeTimer.containsKey(targetId)) {
         // Start tracking the time the target has spent in the radius
         playersInRangeTimer.put(targetId, currentTime);
     } else {
         long timeInRange = currentTime - playersInRangeTimer.get(targetId);
-        if (timeInRange >= getFreezeTimeRequired(getLevel(player))) { // Use getLevel(player)
+
+        // If the target has been in the freezing radius for long enough, start the freeze effect
+        if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000L) { // Convert to milliseconds
             // Apply freezing effect
             championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 
                 (long) (getFreezeDuration(getLevel(player)) * 1000L)); // Use getLevel(player)
 
-            // Reset timers and set grace period
+            // Reset timers and set grace period after freezing effect is applied
             playersInRangeTimer.remove(targetId);
             freezeCooldownTimer.put(targetId, currentTime); // Start grace period
         }
     }
 
-    // Reset the timer if the player leaves the radius
+    // Reset the timer if the player leaves the radius before freeze effect is triggered
     if (target.getLocation().distance(player.getLocation()) > getRadius(getLevel(player))) { // Use getLevel(player)
         playersInRangeTimer.remove(targetId);
         freezeCooldownTimer.put(targetId, currentTime); // Start grace period on exit
     }
 }
+
     
     private void snowAura(Player player) {
 
