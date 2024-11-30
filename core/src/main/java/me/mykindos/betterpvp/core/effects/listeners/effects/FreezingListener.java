@@ -35,11 +35,11 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
         long remainingMillis = event.getEffect().getRemainingDuration();
         int remainingTicks = (int) Math.ceil(remainingMillis / 50.0); // 1 tick = 50 ms
 
-        // Ensure visual freezing starts immediately and lasts for the full duration
-        int adjustedFreezeTicks = remainingTicks + 140; // Add 140 ticks to account for progression delay
+        // Compensate for Minecraft's 2x freeze decrement rate
+        int adjustedFreezeTicks = (remainingTicks + 140) * 2; // Multiply by 2 to counteract the halving
         player.setFreezeTicks(adjustedFreezeTicks);
-        }
     }
+}
 }
 
 
