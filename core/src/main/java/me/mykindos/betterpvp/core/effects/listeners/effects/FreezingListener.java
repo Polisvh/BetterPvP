@@ -39,10 +39,12 @@ public class FreezingListener implements Listener {
     private final Map<UUID, Long> lastDamageTimes = new HashMap<>();
 
     private static final long DAMAGE_INTERVAL = 1500; // Damage every 1.5 seconds
+    private final BetterPvPPlugin plugin; // Add plugin reference
 
     @Inject
-    public FreezingListener(EffectManager effectManager) {
+    public FreezingListener(EffectManager effectManager, BetterPvPPlugin plugin) {
         this.effectManager = effectManager;
+        this.plugin = plugin; // Store the plugin instance
 
         // Start periodic tasks for Slowness and Damage
         startFreezingEffectTasks();
@@ -107,7 +109,7 @@ public class FreezingListener implements Listener {
                     }
                 }
             }
-        }.runTaskTimer(/* Your plugin instance */, 0L, 20L); // Run every second (20 ticks)
+        }.runTaskTimer(plugin, 0L, 20L); // Use the plugin instance here
     }
 
     private Player getPlayerByUUID(UUID uuid) {
@@ -132,4 +134,3 @@ public class FreezingListener implements Listener {
         }
     }
 }
-
