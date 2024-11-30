@@ -171,7 +171,7 @@ private void manageFreezeEffect(Player player, Player target) {
         // Check if the player has stayed inside the radius for long enough to trigger freezing
         if (timeInRange >= freezeTimeRequiredInMillis && !freezeStartTime.containsKey(targetId)) {
             // Apply the freezing effect once they stay in the radius for the required time
-            long freezeDurationInMillis = getFreezeDuration(getLevel(player)) * 1000;  // Convert to milliseconds
+            long freezeDurationInMillis = (long) (getFreezeDuration(getLevel(player)) * 1000); // Convert to milliseconds
             championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (int) (freezeDurationInMillis / 1000));
 
             // Record the start and end time of the freeze effect
