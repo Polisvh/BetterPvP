@@ -151,27 +151,46 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         return true;
     }
 
-    
+    private final Map<UUID, Long> freezeCooldownTimer = new HashMap<>();
     private void manageFreezeEffect(Player player, Player target) {
         UUID targetId = target.getUniqueId();
         long currentTime = System.currentTimeMillis();
+        long freezeGracePeriod = (long) freezeDuration * 1000L;
 
-        if (!playersInRangeTimer.containsKey(targetId)) {
-            playersInRangeTimer.put(targetId, currentTime);
+            if (freezeCooldownTimer.containsKey(targetId)) {
+        long timeSinceLeft = currentTime - freezeCooldownTimer.get(targetId);
+        if (timeSinceLeft < freezeGracePeriod) {
+            // Player is within the grace period, do not restart freeze countdown
+            return;
         } else {
-            long timeInRange = currentTime - playersInRangeTimer.get(targetId);
-            if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000) {
-                championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (long) (getFreezeDuration(getLevel(player)) * 1000L));
-
-                playersInRangeTimer.remove(targetId);
-            }
-        }
-
-        if (target.getLocation().distance(player.getLocation()) > getRadius(getLevel(player))) {
-            playersInRangeTimer.remove(targetId);
+            // Grace period expired, remove the cooldown entry
+            freezeCooldownTimer.remove(targetId);
         }
     }
 
+    // Handle the freeze countdown logic
+    if (!playersInRangeTimer.containsKey(targetId)) {
+        // Start tracking the time the target has spent in the radius
+        playersInRangeTimer.put(targetId, currentTime);
+    } else {
+        long timeInRange = currentTime - playersInRangeTimer.get(targetId);
+        if (timeInRange >= freezeTimeRequired) {
+            // Apply freezing effect
+            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 
+                (long) (getFreezeDuration(level) * 1000L));
+
+            // Reset timers and set grace period
+            playersInRangeTimer.remove(targetId);
+            freezeCooldownTimer.put(targetId, currentTime); // Start grace period
+        }
+    }
+
+    // Reset the timer if the player leaves the radius
+    if (target.getLocation().distance(player.getLocation()) > getRadius(level)) {
+        playersInRangeTimer.remove(targetId);
+        freezeCooldownTimer.put(targetId, currentTime); // Start grace period on exit
+    }
+}
     
     private void snowAura(Player player) {
 
