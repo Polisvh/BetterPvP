@@ -151,7 +151,10 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         return true;
     }
 
-    private final Map<UUID, Long> freezeCooldownTimer = new HashMap<>();
+private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
+private final Map<UUID, Long> freezeStartTime = new HashMap<>();  // Track when the freeze started
+private final Map<UUID, Long> freezeEndTime = new HashMap<>();    // Track when the freeze ends
+
 private void manageFreezeEffect(Player player, Player target) {
     UUID targetId = target.getUniqueId();
     long currentTime = System.currentTimeMillis();
@@ -167,26 +170,45 @@ private void manageFreezeEffect(Player player, Player target) {
         long timeInRange = currentTime - playersInRangeTimer.get(targetId);
         double freezeTimeRequiredInMillis = getFreezeTimeRequired(getLevel(player)) * 1000;  // Convert to milliseconds
 
-        // Check if the player has stayed inside the radius for long enough
-        if (timeInRange >= freezeTimeRequiredInMillis) {
-            // Apply the freezing effect for the duration they have stayed in the radius
-            long freezeDuration = timeInRange / 1000;  // Duration in seconds, rounding down to whole seconds
-            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, freezeDuration);
+        // Check if the player has stayed inside the radius for long enough to trigger freezing
+        if (timeInRange >= freezeTimeRequiredInMillis && !freezeStartTime.containsKey(targetId)) {
+            // Apply the freezing effect once they stay in the radius for the required time
+            long freezeDurationInMillis = getFreezeDuration(getLevel(player)) * 1000;  // Convert to milliseconds
+            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (int) (freezeDurationInMillis / 1000));
 
-            // Remove the player from the timer once freezing has been applied
-            playersInRangeTimer.remove(targetId);
+            // Record the start and end time of the freeze effect
+            freezeStartTime.put(targetId, currentTime);
+            freezeEndTime.put(targetId, currentTime + freezeDurationInMillis);
+        }
+
+        // If the freezing effect is already applied, and the player is still within the radius, update the duration
+        if (freezeStartTime.containsKey(targetId)) {
+            long freezeDurationLeft = freezeEndTime.get(targetId) - currentTime;
+            if (freezeDurationLeft > 0) {
+                // Still within freeze duration
+                championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (int) (freezeDurationLeft / 1000));
+            } else {
+                // Freezing effect duration expired
+                championsManager.getEffects().removeEffect(target, EffectTypes.FREEZING);
+                freezeStartTime.remove(targetId);
+                freezeEndTime.remove(targetId);
+            }
         }
     } else {
-        // If the enemy leaves the radius, remove their timer
-        if (playersInRangeTimer.containsKey(targetId)) {
-            playersInRangeTimer.remove(targetId);
+        // If the enemy leaves the radius, the freeze effect still lasts for its duration
+        if (freezeStartTime.containsKey(targetId)) {
+            long freezeDurationLeft = freezeEndTime.get(targetId) - currentTime;
+            if (freezeDurationLeft <= 0) {
+                // Remove the freeze effect after its duration has expired
+                championsManager.getEffects().removeEffect(target, EffectTypes.FREEZING);
+                freezeStartTime.remove(targetId);
+                freezeEndTime.remove(targetId);
+            }
         }
     }
 }
 
-
-
-    
+   
     private void snowAura(Player player) {
 
         int level = getLevel(player);
