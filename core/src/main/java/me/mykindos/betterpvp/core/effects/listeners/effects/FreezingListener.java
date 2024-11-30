@@ -22,25 +22,29 @@ public class FreezingListener implements Listener {
         this.effectManager = effectManager;
     }
 
-    @EventHandler
-    public void onReceiveFreezingEffect(EffectReceiveEvent event) {
-        // Check if the effect is "FREEZING" and not cancelled
-        if (event.isCancelled() || event.getEffect().getEffectType() != EffectTypes.FREEZING) {
-            return;
+@EventHandler
+public void onReceiveFreezingEffect(EffectReceiveEvent event) {
+    // Check if the effect is "FREEZING" and not cancelled
+    if (event.isCancelled() || event.getEffect().getEffectType() != EffectTypes.FREEZING) {
+        return;
+    }
+
+    LivingEntity target = event.getTarget();
+    if (target instanceof Player player) {
+        // Get the remaining duration in ticks
+        long remainingMillis = event.getEffect().getRemainingDuration();
+        int remainingTicks = (int) Math.ceil(remainingMillis / 50.0); // 1 tick = 50 ms
+
+        // Apply freezing ticks
+        if (remainingTicks < 140) {
+            // If less than 140 ticks, simulate that the player is already partially frozen
+            int preFreezeTicks = Math.max(0, 140 - remainingTicks);
+            player.setFreezeTicks(preFreezeTicks); // Pre-fill freeze progression
         }
 
-        LivingEntity target = event.getTarget();
-        if (target instanceof Player player) {
-            // Get the duration of the effect in seconds
-            long effectDurationMillis = event.getEffect().getRemainingDuration();
-            long effectDurationSeconds = effectDurationMillis / 1000;
-
-            // Convert duration to ticks (1 second = 20 ticks)
-            int freezeTicks = (int) effectDurationSeconds * 20;
-
-            // Apply freezeTicks to the player
-            player.setFreezeTicks(freezeTicks);
-        }
+        // Apply the remaining freeze duration
+        player.setFreezeTicks(remainingTicks);
     }
 }
+
 
