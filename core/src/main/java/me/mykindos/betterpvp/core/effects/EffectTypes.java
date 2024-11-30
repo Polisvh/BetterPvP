@@ -33,6 +33,7 @@ import me.mykindos.betterpvp.core.effects.types.positive.ResistanceEffect;
 import me.mykindos.betterpvp.core.effects.types.positive.SpeedEffect;
 import me.mykindos.betterpvp.core.effects.types.positive.StrengthEffect;
 import me.mykindos.betterpvp.core.effects.types.positive.VanishEffect;
+import me.mykindos.betterpvp.core.effects.types.negative.FreezingEffect;
 import me.mykindos.betterpvp.core.utilities.UtilMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
