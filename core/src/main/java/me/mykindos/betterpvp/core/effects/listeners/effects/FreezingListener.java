@@ -13,6 +13,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.Map;
+import java.util.HashMap;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.stream.Collectors;
 import java.util.*;
 import java.util.UUID;
@@ -31,17 +35,33 @@ public class FreezingListener implements Listener {
         this.effectManager = effectManager;
     }
 
-    // Apply frost damage every 1.5 seconds (30 ticks) to players affected by the "FREEZING" effect
-    @UpdateEvent(delay = 30)
+    
+public class FrostDamageHandler {
+
+    private final Map<LivingEntity, Long> lastDamageTimes = new HashMap<>(); // To store the last damage time for each player
+    private final long DAMAGE_INTERVAL = 30L; // 30 ticks = 1.5 seconds
+
+    @UpdateEvent(delay = 30) // This is the delay between event ticks (30 ticks = 1.5 seconds)
     public void applyFrostDamage() {
+        long currentTime = System.currentTimeMillis(); // Get the current time in milliseconds
+        
+        // Iterate over all entities affected by the "FREEZING" effect
         Set<LivingEntity> affectedEntities = effectManager.getAllEntitiesWithEffects().stream()
-                .filter(entity -> effectManager.hasEffect(entity, EffectTypes.FREEZING)) // Filter to only those with the FREEZING effect
-                .collect(Collectors.toSet());
+            .filter(entity -> effectManager.hasEffect(entity, EffectTypes.FREEZING)) // Filter to those with the FREEZING effect
+            .collect(Collectors.toSet());
 
         for (LivingEntity entity : affectedEntities) {
-            entity.damage(1.0);
+            // Check the last time the entity was damaged
+            Long lastDamageTime = lastDamageTimes.get(entity);
+
+            // If it's been more than 1.5 seconds (30 ticks), apply damage
+            if (lastDamageTime == null || (currentTime - lastDamageTime) >= DAMAGE_INTERVAL * 50) {
+                entity.damage(1.0); // Apply 1 damage
+                lastDamageTimes.put(entity, currentTime); // Update the last damage time
             }
         }
+    }
+}
 
    @EventHandler
 public void onReceiveFreezingEffect(EffectReceiveEvent event) {
