@@ -161,7 +161,7 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         } else {
             long timeInRange = currentTime - playersInRangeTimer.get(targetId);
             if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000) {
-                championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, getFreezeDuration(getLevel(player)) * 1000L));
+                championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, getFreezeDuration(getLevel(player)) * 1000L);
 
                 playersInRangeTimer.remove(targetId);
             }
