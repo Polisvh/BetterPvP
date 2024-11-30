@@ -52,8 +52,6 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
     private double freezeDurationIncreasePerLevel;
     private double freezeTimeRequiredDecreasePerLevel;
 
-    private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
-
     @Inject
     public ArcticArmour(Champions champions, ChampionsManager championsManager, WorldBlockHandler blockHandler) {
         super(champions, championsManager);
