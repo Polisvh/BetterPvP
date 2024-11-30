@@ -506,9 +506,10 @@ skills:
       baseDuration: 2.0
       durationIncreasePerLevel: 0.0
       resistanceStrength: 1
-      slownessStrength: 1
-      slowDuration: 2.0
-      slowDurationIncreasePerLevel: 0.5
+      freezeDuration: 4.0
+      freezeTimeRequired: 5.0
+      freezeDurationIncreasePerLevel: 0.0
+      freezeTimeRequiredDecreasePerLevel: 1.0
       energyDecreasePerLevel: 4.0
       energyStartCost: 10.0
       energyStartCostDecreasePerLevel: 0.0
