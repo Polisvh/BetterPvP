@@ -78,8 +78,8 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
                 getValueString(this::getFreezeDuration, level) + " seconds",
                 "",
                 "Uses " + getValueString(this::getEnergyStartCost, level) + " energy on activation",
-                "Energy / Second: " + getValueString(this::getEnergy, level)
-                EffectTypes.RESISTANCE.getDescription(resistanceStrength)
+                "Energy / Second: " + getValueString(this::getEnergy, level),
+                EffectTypes.RESISTANCE.getDescription(resistanceStrength),
                 EffectTypes.FREEZING.getGenericDescription()
         };
     }
