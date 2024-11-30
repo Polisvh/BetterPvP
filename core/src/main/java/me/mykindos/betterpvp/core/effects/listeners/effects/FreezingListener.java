@@ -35,17 +35,12 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
         long remainingMillis = event.getEffect().getRemainingDuration();
         int remainingTicks = (int) Math.ceil(remainingMillis / 50.0); // 1 tick = 50 ms
 
-        // Apply freezing ticks
-        if (remainingTicks < 140) {
-            // If less than 140 ticks, simulate that the player is already partially frozen
-            int preFreezeTicks = Math.max(0, 140 - remainingTicks);
-            player.setFreezeTicks(preFreezeTicks); // Pre-fill freeze progression
+        // Ensure visual freezing starts immediately and lasts for the full duration
+        int adjustedFreezeTicks = remainingTicks + 140; // Add 140 ticks to account for progression delay
+        player.setFreezeTicks(adjustedFreezeTicks);
         }
-
-        // Apply the remaining freeze duration
-        player.setFreezeTicks(remainingTicks);
     }
 }
-}
+
 
 
