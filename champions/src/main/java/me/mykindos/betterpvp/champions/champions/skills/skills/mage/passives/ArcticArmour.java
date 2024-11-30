@@ -148,7 +148,7 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         }
         return true;
     }
-
+private final Map<UUID, HashMap<String, Long>> updaterCooldowns = new HashMap<>();
 private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
 private final Map<UUID, Long> freezeStartTime = new HashMap<>();  // Track when the freeze started
 private final Map<UUID, Long> freezeEndTime = new HashMap<>();    // Track when the freeze ends
