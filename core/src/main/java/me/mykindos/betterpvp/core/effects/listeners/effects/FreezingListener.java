@@ -10,6 +10,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import me.mykindos.betterpvp.core.effects.events.EffectExpireEvent;
 
 @BPvPListener
 @Singleton
@@ -41,7 +42,7 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
     }
 }
     @EventHandler
-    public void hasExpired(hasExpired event) {
+    public void EffectExpireEvent(EffectExpireEvent event) {
         // Check if the effect is "FREEZING"
         if (event.getEffect().getEffectType() != EffectTypes.FREEZING) {
             return;
