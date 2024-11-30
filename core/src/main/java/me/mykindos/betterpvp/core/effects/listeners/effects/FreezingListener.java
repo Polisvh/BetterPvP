@@ -41,7 +41,7 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
     }
 }
     @EventHandler
-    public void onEffectExpire(EffectExpireEvent event) {
+    public void hasExpired(hasExpired event) {
         // Check if the effect is "FREEZING"
         if (event.getEffect().getEffectType() != EffectTypes.FREEZING) {
             return;
