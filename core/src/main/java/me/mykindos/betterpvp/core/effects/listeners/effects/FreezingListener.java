@@ -6,21 +6,19 @@ import me.mykindos.betterpvp.core.effects.EffectManager;
 import me.mykindos.betterpvp.core.effects.EffectTypes;
 import me.mykindos.betterpvp.core.effects.events.EffectReceiveEvent;
 import me.mykindos.betterpvp.core.listener.BPvPListener;
-import org.bukkit.Bukkit;
+import me.mykindos.betterpvp.core.framework.updater.UpdateEvent;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+
+import java.util.Map;
+import java.util.HashMap;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.*;
 import java.util.UUID;
 
 @BPvPListener
@@ -29,107 +27,67 @@ public class FreezingListener implements Listener {
 
     private final EffectManager effectManager;
 
-    // Track players with the Freezing effect
     private final Set<UUID> playersWithFreezingEffect = new HashSet<>();
 
-    // Track when the Freezing effect started
-    private final Map<UUID, Long> freezingStartTimes = new HashMap<>();
-
-    // Track the last time players took damage from freezing
-    private final Map<UUID, Long> lastDamageTimes = new HashMap<>();
-
-    private static final long DAMAGE_INTERVAL = 1500; // Damage every 1.5 seconds
-    private final org.bukkit.plugin.java.JavaPlugin plugin; // Use JavaPlugin instead of BetterPvPPlugin
 
     @Inject
-    public FreezingListener(EffectManager effectManager, org.bukkit.plugin.java.JavaPlugin plugin) {
+    public FreezingListener(EffectManager effectManager) {
         this.effectManager = effectManager;
-        this.plugin = plugin; // Use the passed JavaPlugin instance
-
-        // Start periodic tasks for Slowness and Damage
-        startFreezingEffectTasks();
     }
 
-    @EventHandler
-    public void onReceiveFreezingEffect(EffectReceiveEvent event) {
-        if (event.isCancelled()) return;
+    
+public class FrostDamageHandler {
 
-        // Check if the effect is "FREEZING"
-        if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
-            LivingEntity target = event.getTarget();
+    private final Map<LivingEntity, Long> lastDamageTimes = new HashMap<>(); // To store the last damage time for each player
+    private final long DAMAGE_INTERVAL = 30L; // 30 ticks = 1.5 seconds
 
-            if (target instanceof Player player) {
-                UUID playerUUID = player.getUniqueId();
+    @UpdateEvent(delay = 30) // This is the delay between event ticks (30 ticks = 1.5 seconds)
+    public void applyFrostDamage() {
+        long currentTime = System.currentTimeMillis(); // Get the current time in milliseconds
+        
+        // Iterate over all entities affected by the "FREEZING" effect
+        Set<LivingEntity> affectedEntities = effectManager.getAllEntitiesWithEffects().stream()
+            .filter(entity -> effectManager.hasEffect(entity, EffectTypes.FREEZING)) // Filter to those with the FREEZING effect
+            .collect(Collectors.toSet());
 
-                // Register the start time of the Freezing effect
-                freezingStartTimes.put(playerUUID, System.currentTimeMillis());
+        for (LivingEntity entity : affectedEntities) {
+            // Check the last time the entity was damaged
+            Long lastDamageTime = lastDamageTimes.get(entity);
 
-                // Play sound if not already played
-                if (!playersWithFreezingEffect.contains(playerUUID)) {
-                    player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 0.0f);
-                    playersWithFreezingEffect.add(playerUUID);
-                }
+            // If it's been more than 1.5 seconds (30 ticks), apply damage
+            if (lastDamageTime == null || (currentTime - lastDamageTime) >= DAMAGE_INTERVAL * 50) {
+                entity.damage(1.0); // Apply 1 damage
+                lastDamageTimes.put(entity, currentTime); // Update the last damage time
             }
         }
     }
+}
 
-    private void startFreezingEffectTasks() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                long currentTime = System.currentTimeMillis();
+   @EventHandler
+public void onReceiveFreezingEffect(EffectReceiveEvent event) {
+    // Check if the effect is "FREEZING"
+    if (event.isCancelled()) return;
+    if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
+        LivingEntity target = event.getTarget();
 
-                // Iterate over players with the freezing effect
-                Iterator<UUID> iterator = playersWithFreezingEffect.iterator();
-                while (iterator.hasNext()) {
-                    UUID playerUUID = iterator.next();
-                    Player player = getPlayerByUUID(playerUUID);
+        // Apply the freezing effect
+        if (target instanceof Player player) {
+            // Get the duration of the effect in seconds
+            long effectDurationMillis = event.getEffect().getRemainingDuration();
+            long effectDurationSeconds = effectDurationMillis / 1000;
 
-                    if (player == null || !effectManager.hasEffect(player, EffectTypes.FREEZING)) {
-                        // Remove players no longer affected by Freezing
-                        freezingStartTimes.remove(playerUUID);
-                        lastDamageTimes.remove(playerUUID);
-                        iterator.remove();
-                        continue;
-                    }
+            // Convert duration to ticks (1 second = 20 ticks)
+            int freezeTicks = (int) effectDurationSeconds * 20;
 
-                    long startTime = freezingStartTimes.getOrDefault(playerUUID, currentTime);
+            // Apply freezeTicks to the player
+            player.setFreezeTicks(freezeTicks);
 
-                    // Check if the player has had the Freezing effect for 140 ticks (7 seconds)
-                    if (currentTime - startTime >= 7000) {
-                        // Apply Slowness effect
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 140, 1, true, true));
-                    }
-
-                    // Apply periodic damage if enough time has passed
-                    long lastDamageTime = lastDamageTimes.getOrDefault(playerUUID, 0L);
-                    if (currentTime - lastDamageTime >= DAMAGE_INTERVAL) {
-                        player.damage(1.0); // Apply 1 damage
-                        lastDamageTimes.put(playerUUID, currentTime); // Update last damage time
-                    }
+            // Play the glass-breaking sound only when receiving the effect
+         UUID playerUUID = player.getUniqueId();
+            if (!playersWithFreezingEffect.contains(playerUUID)) {
+                player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 0.0f);
+                playersWithFreezingEffect.add(playerUUID);
                 }
-            }
-        }.runTaskTimer(plugin, 0L, 20L); // Use the plugin instance here
-    }
-
-    private Player getPlayerByUUID(UUID uuid) {
-        return Bukkit.getPlayer(uuid); // Fetch player by UUID
-    }
-
-    @EventHandler
-    public void onEffectEnd(EffectReceiveEvent event) {
-        if (event.isCancelled()) return;
-
-        // Check if the effect is "FREEZING"
-        if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
-            LivingEntity target = event.getTarget();
-            if (target instanceof Player player) {
-                UUID playerUUID = player.getUniqueId();
-
-                // Clean up after the effect ends
-                freezingStartTimes.remove(playerUUID);
-                playersWithFreezingEffect.remove(playerUUID);
-                lastDamageTimes.remove(playerUUID);
             }
         }
     }
