@@ -197,7 +197,7 @@ private void manageFreezeEffect(Player player, Player target) {
             long timeInRange = currentTime - playersInRangeTimer.get(targetId);
             if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000L) {
                 // If they stayed inside for the required time and have left the radius, start the freezing countdown
-                long freezeTimeLeft = getFreezeDuration(getLevel(player)) * 1000L - (currentTime - freezeCooldownTimer.getOrDefault(targetId, currentTime));
+                long freezeTimeLeft = (long) getFreezeDuration(getLevel(player)) * 1000L - (currentTime - freezeCooldownTimer.getOrDefault(targetId, currentTime));
 
                 if (freezeTimeLeft > 0) {
                     // Continue freezing countdown if the time is left
