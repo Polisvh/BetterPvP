@@ -156,63 +156,34 @@ private void manageFreezeEffect(Player player, Player target) {
     UUID targetId = target.getUniqueId();
     long currentTime = System.currentTimeMillis();
 
-    // Grace period logic: prevents freezing effects from applying too quickly in succession
-    long freezeGracePeriod = (long) getFreezeDuration(getLevel(player)) * 1000L; // Freeze duration in milliseconds
-    if (freezeCooldownTimer.containsKey(targetId)) {
-        long timeSinceLeft = currentTime - freezeCooldownTimer.get(targetId);
-        if (timeSinceLeft < freezeGracePeriod) {
-            // Player is within the grace period, do not restart freeze countdown
-            return;
-        } else {
-            // Grace period expired, remove the cooldown entry
-            freezeCooldownTimer.remove(targetId);
-        }
-    }
-
-    // Track the time the target spends within the radius
+    // Check if the player is within the radius of the effect
     if (target.getLocation().distance(player.getLocation()) <= getRadius(getLevel(player))) {
-        // If the target is inside the radius, we start or continue tracking time spent in the radius
+        // If the player is inside the radius, start tracking time if not already tracking
         if (!playersInRangeTimer.containsKey(targetId)) {
-            // Start tracking the time when the target enters the radius
             playersInRangeTimer.put(targetId, currentTime);
         }
-        
-        // Calculate the time the target has been in the radius
+
+        // Calculate the time the enemy has been inside the radius
         long timeInRange = currentTime - playersInRangeTimer.get(targetId);
+        double freezeTimeRequiredInMillis = getFreezeTimeRequired(getLevel(player)) * 1000;  // Convert to milliseconds
 
-        // If the target has been in the radius long enough to trigger freezing, apply the freezing effect
-        if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000L) {
-            // Apply the freezing effect immediately after the required time is spent in the radius
-            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 
-                (long) (getFreezeDuration(getLevel(player)) * 1000L)); // Apply freezing effect for the specified duration
+        // Check if the player has stayed inside the radius for long enough
+        if (timeInRange >= freezeTimeRequiredInMillis) {
+            // Apply the freezing effect for the duration they have stayed in the radius
+            long freezeDuration = timeInRange / 1000;  // Duration in seconds, rounding down to whole seconds
+            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, freezeDuration);
 
-            // After applying freezing, remove the time tracking and start the cooldown
+            // Remove the player from the timer once freezing has been applied
             playersInRangeTimer.remove(targetId);
-            freezeCooldownTimer.put(targetId, currentTime); // Start grace period after freezing effect is applied
         }
     } else {
-        // If the target is outside the radius, start the freezing duration countdown
+        // If the enemy leaves the radius, remove their timer
         if (playersInRangeTimer.containsKey(targetId)) {
-            // Calculate the time since the target left the radius
-            long timeInRange = currentTime - playersInRangeTimer.get(targetId);
-            if (timeInRange >= getFreezeTimeRequired(getLevel(player)) * 1000L) {
-                // If they stayed inside for the required time and have left the radius, start the freezing countdown
-                long freezeTimeLeft = (long) getFreezeDuration(getLevel(player)) * 1000L - (currentTime - freezeCooldownTimer.getOrDefault(targetId, currentTime));
-
-                if (freezeTimeLeft > 0) {
-                    // Continue freezing countdown if the time is left
-                    championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, freezeTimeLeft);
-                } else {
-                    // If freezing duration is over, remove freezing effect
-                    championsManager.getEffects().removeEffect(target, EffectTypes.FREEZING);
-                }
-            }
-
-            // Remove the player from the timer once they've left the radius
             playersInRangeTimer.remove(targetId);
         }
     }
 }
+
 
 
     
