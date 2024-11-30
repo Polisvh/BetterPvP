@@ -167,11 +167,10 @@ private void manageFreezeEffect(Player player, Player target) {
         double freezeTimeRequiredInMillis = getFreezeTimeRequired(getLevel(player)) * 1000; // Convert to milliseconds
 
         // If the target has been in range long enough to freeze, apply the freeze effect
-        if (timeInRange >= freezeTimeRequiredInMillis) {
+        if (timeInRange == freezeTimeRequiredInMillis) {
             long freezeDurationInMillis = (long) (getFreezeDuration(getLevel(player)) * 1000);
             championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 4000);
             playersInRangeTimer.remove(targetId);
-            playersInRangeTimer.put(targetId, currentTime);
             
         }
     } else {
