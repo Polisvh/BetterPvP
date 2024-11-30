@@ -152,12 +152,12 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
     }
 
     private final Map<UUID, Long> freezeCooldownTimer = new HashMap<>();
-    private void manageFreezeEffect(Player player, Player target) {
-        UUID targetId = target.getUniqueId();
-        long currentTime = System.currentTimeMillis();
-        long freezeGracePeriod = (long) freezeDuration * 1000L;
+private void manageFreezeEffect(Player player, Player target) {
+    UUID targetId = target.getUniqueId();
+    long currentTime = System.currentTimeMillis();
+    long freezeGracePeriod = (long) getFreezeDuration(getLevel(player)) * 1000L; // Use getLevel(player)
 
-            if (freezeCooldownTimer.containsKey(targetId)) {
+    if (freezeCooldownTimer.containsKey(targetId)) {
         long timeSinceLeft = currentTime - freezeCooldownTimer.get(targetId);
         if (timeSinceLeft < freezeGracePeriod) {
             // Player is within the grace period, do not restart freeze countdown
@@ -174,10 +174,10 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
         playersInRangeTimer.put(targetId, currentTime);
     } else {
         long timeInRange = currentTime - playersInRangeTimer.get(targetId);
-        if (timeInRange >= freezeTimeRequired) {
+        if (timeInRange >= getFreezeTimeRequired(getLevel(player))) { // Use getLevel(player)
             // Apply freezing effect
             championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 
-                (long) (getFreezeDuration(level) * 1000L));
+                (long) (getFreezeDuration(getLevel(player)) * 1000L)); // Use getLevel(player)
 
             // Reset timers and set grace period
             playersInRangeTimer.remove(targetId);
@@ -186,7 +186,7 @@ public class ArcticArmour extends ActiveToggleSkill implements EnergySkill, Defe
     }
 
     // Reset the timer if the player leaves the radius
-    if (target.getLocation().distance(player.getLocation()) > getRadius(level)) {
+    if (target.getLocation().distance(player.getLocation()) > getRadius(getLevel(player))) { // Use getLevel(player)
         playersInRangeTimer.remove(targetId);
         freezeCooldownTimer.put(targetId, currentTime); // Start grace period on exit
     }
