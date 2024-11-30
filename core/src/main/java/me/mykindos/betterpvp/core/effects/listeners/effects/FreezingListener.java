@@ -46,5 +46,6 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
         player.setFreezeTicks(remainingTicks);
     }
 }
+}
 
 
