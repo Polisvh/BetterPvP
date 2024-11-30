@@ -34,6 +34,6 @@ public class FreezingEffect extends VanillaEffectType {
     @Override
     public String getGenericDescription() {
         // Description of the freezing effect
-        return "<white>" + getName() + "<reset> slows and deals 1 frost damage every 1.5 seconds.";
+        return "<white>" + getName() + "<reset> slows and deals 1 frost damage every 2 seconds.";
     }
 }
