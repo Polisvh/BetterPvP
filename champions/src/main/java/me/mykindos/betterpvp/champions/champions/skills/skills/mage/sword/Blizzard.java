@@ -107,7 +107,7 @@ public class Blizzard extends ChannelSkill implements InteractSkill, EnergyChann
                 UtilVelocity.velocity(damagee, event.getDamager(), velocityData);
                 //damagee.setVelocity(pushBackVelocity);
 
-                championsManager.getEffects().addEffect(damagee, event.getDamager(), EffectTypes.SLOWNESS, slowStrength, (long) (getSlowDuration(level) * 1000));
+                championsManager.getEffects().addEffect(damagee, event.getDamager(), EffectTypes.FREEZING, slowStrength, (long) (getSlowDuration(level) * 1000));
 
                 event.cancel("Snowball");
                 snow.remove(snowball);
