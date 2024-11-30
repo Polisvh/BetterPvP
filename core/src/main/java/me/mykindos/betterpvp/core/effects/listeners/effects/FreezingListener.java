@@ -76,3 +76,5 @@ public void onReceiveFreezingEffect(EffectReceiveEvent event) {
     }
 }
 }
+}
+
