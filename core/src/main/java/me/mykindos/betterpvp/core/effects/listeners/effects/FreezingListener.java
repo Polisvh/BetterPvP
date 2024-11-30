@@ -14,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @BPvPListener
 @Singleton
@@ -30,15 +31,17 @@ public class FreezingListener implements Listener {
     @UpdateEvent(delay = 30)
     public void applyFrostDamage() {
         // Get all entities affected by the "FREEZING" effect
-        Set<LivingEntity> affectedEntities = effectManager.getEntitiesWithEffect(EffectTypes.FREEZING);
+        Set<LivingEntity> affectedEntities = effectManager.getAllEntitiesWithEffects().stream()
+                .filter(entity -> effectManager.hasEffect(entity, EffectTypes.FREEZING)) // Filter to only those with the FREEZING effect
+                .collect(Collectors.toSet());
 
         for (LivingEntity entity : affectedEntities) {
             // Apply 1 damage to each entity affected by the freezing effect
             entity.damage(1.0); // Deals 1 damage every 1.5 seconds (30 ticks)
             
-            // Freeze the entity for 30 ticks (1.5 seconds)
+            // Check if the entity is a player, and freeze if it is
             if (entity instanceof Player player) {
-                player.setFreezeTicks(140);
+                player.setFreezeTicks(140);  // Apply freezing effect to the player
             }
         }
     }
