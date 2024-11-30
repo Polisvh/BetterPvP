@@ -22,6 +22,9 @@ public class FreezingListener implements Listener {
 
     private final EffectManager effectManager;
 
+    private final Set<UUID> playersWithFreezingEffect = new HashSet<>();
+
+
     @Inject
     public FreezingListener(EffectManager effectManager) {
         this.effectManager = effectManager;
@@ -46,21 +49,30 @@ public class FreezingListener implements Listener {
         }
     }
 
-    @EventHandler
-    public void onReceiveFreezingEffect(EffectReceiveEvent event) {
-        // Check if the effect is "FREEZING"
-        if (event.isCancelled()) return;
-        if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
-            LivingEntity target = event.getTarget();
+   @EventHandler
+public void onReceiveFreezingEffect(EffectReceiveEvent event) {
+    // Check if the effect is "FREEZING"
+    if (event.isCancelled()) return;
+    if (event.getEffect().getEffectType() == EffectTypes.FREEZING) {
+        LivingEntity target = event.getTarget();
 
-            // Apply the freezing effect
-            if (target instanceof Player player) {
-                // Freeze the player for a specific duration when receiving the effect
-                player.setFreezeTicks(140);
+        // Apply the freezing effect
+        if (target instanceof Player player) {
+            // Get the duration of the effect in seconds
+            long effectDurationMillis = event.getEffect().getDuration();
+            long effectDurationSeconds = effectDurationMillis / 1000;
 
-                // Play the glass-breaking sound only when receiving the effect
-                player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 0.0f);
-            }
+            // Convert duration to ticks (1 second = 20 ticks)
+            int freezeTicks = (int) effectDurationSeconds * 20;
+
+            // Apply freezeTicks to the player
+            player.setFreezeTicks(freezeTicks);
+
+            // Play the glass-breaking sound only when receiving the effect
+            if (!playersWithFreezingEffect.contains(playerUUID)) {
+                    player.playSound(player.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 0.0f);
+                    playersWithFreezingEffect.add(playerUUID); // Mark the player as having the effect
         }
     }
+}
 }
