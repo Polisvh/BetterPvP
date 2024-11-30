@@ -160,6 +160,8 @@ private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
             // If the enemy is within the radius, start or continue the timer
             if (!playersInRangeTimer.containsKey(targetId)) {
                 playersInRangeTimer.put(targetId, currentTime);  // Start the timer when the enemy enters the radius
+            } else { 
+                playersInRangeTimer.remove(targetId);
             }
 
             long timeInRange = currentTime - playersInRangeTimer.get(targetId);
@@ -169,12 +171,8 @@ private final Map<UUID, Long> playersInRangeTimer = new HashMap<>();
             if (timeInRange >= freezeTimeRequiredInMillis) {
                 long freezeDurationInMillis = (long) (getFreezeDuration(getLevel(player)) * 1000); // Convert to milliseconds
                 championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (int) (freezeDurationInMillis / 1000));
-
-                // Reset the timer to 0 after applying the freezing effect
-                playersInRangeTimer.put(targetId, currentTime);
             }
         } else {
-            // If the target leaves the radius, reset the timer to 0
             playersInRangeTimer.remove(targetId);
         }
     }
