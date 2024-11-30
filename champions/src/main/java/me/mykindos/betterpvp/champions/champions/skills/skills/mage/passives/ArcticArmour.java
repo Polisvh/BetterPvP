@@ -168,13 +168,11 @@ private void manageFreezeEffect(Player player, Player target) {
 
         // If the target has been in range long enough to freeze, apply the freeze effect
         if (timeInRange >= freezeTimeRequiredInMillis) {
-            long freezeDurationInMillis = (long) (getFreezeDuration(getLevel(player)) * 1000); // Convert to milliseconds
-
-            // Apply the freezing effect to the target for the duration
-            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, (int) (freezeDurationInMillis / 1000));
-
-            // Reset the timer after applying the freezing effect so that it doesn't keep reapplying
-            playersInRangeTimer.put(targetId, currentTime); // Start the timer again after applying the freeze
+            long freezeDurationInMillis = (long) (getFreezeDuration(getLevel(player)) * 1000);
+            championsManager.getEffects().addEffect(target, EffectTypes.FREEZING, 1, 4000);
+            playersInRangeTimer.remove(targetId);
+            playersInRangeTimer.put(targetId, currentTime);
+            
         }
     } else {
         // If the target leaves the radius, reset the timer to 0
