@@ -39,12 +39,12 @@ public class FreezingListener implements Listener {
     private final Map<UUID, Long> lastDamageTimes = new HashMap<>();
 
     private static final long DAMAGE_INTERVAL = 1500; // Damage every 1.5 seconds
-    private final BetterPvPPlugin plugin; // Add plugin reference
+    private final org.bukkit.plugin.java.JavaPlugin plugin; // Use JavaPlugin instead of BetterPvPPlugin
 
     @Inject
-    public FreezingListener(EffectManager effectManager, BetterPvPPlugin plugin) {
+    public FreezingListener(EffectManager effectManager, org.bukkit.plugin.java.JavaPlugin plugin) {
         this.effectManager = effectManager;
-        this.plugin = plugin; // Store the plugin instance
+        this.plugin = plugin; // Use the passed JavaPlugin instance
 
         // Start periodic tasks for Slowness and Damage
         startFreezingEffectTasks();
