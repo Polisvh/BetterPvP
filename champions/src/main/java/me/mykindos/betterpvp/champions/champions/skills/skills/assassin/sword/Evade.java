@@ -41,7 +41,7 @@ import java.util.WeakHashMap;
 
 @Singleton
 @BPvPListener
-public class Evade extends Skill implements InteractSkill, Listener, MovementSkill {
+public class Evade extends Skill implements InteractSkill, Listener, MovementSkill, {
 
     private final WeakHashMap<Player, EvadeData> charges = new WeakHashMap<>();
     private final WeakHashMap<Player, Vector> movementDirections = new WeakHashMap<>();
