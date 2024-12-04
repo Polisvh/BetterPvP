@@ -244,19 +244,19 @@ public void activate(Player player, int level) {
 
 
                 // Particle effect
-        double playerHeight = player.getHeight(); // Assuming 1.8 for most players, could be different for some
+        double playerHeight = player.getHeight(); 
         double particleSpacing = 0.1;
-        Location baseLocation = player.getLocation().add(0, 0, 0); // This will be the starting location for particles
+        Location baseLocation = player.getLocation().add(0, 0, 0);
 
-        DustOptions dustOptions = new DustOptions(Color.BLACK, 1.0F);
-        // Loop over the line path and spawn particles at each point
+        Color color = new Color(Color.BLACK, 1.0F);
+
         for (Location point : line.toLocations()) {
-            // For each point along the teleport path, spawn particles from the feet to the top of the player
+     
             for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
-                Location particleLocation = point.clone().add(0.0, yOffset, 0.0); // Adjust for height
+                Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
 
-                // Spawn black particles using FIREWORKS (or another particle type, like SMOKE_NORMAL)
-                player.getWorld().spawnParticle(Particle.DUST_PLUME, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
+               
+                player.getWorld().spawnParticle(Particle.ENTITY_EFFECT, particleLocation, 0, 0, 0, 0, 0.1);
             }
         }
 
