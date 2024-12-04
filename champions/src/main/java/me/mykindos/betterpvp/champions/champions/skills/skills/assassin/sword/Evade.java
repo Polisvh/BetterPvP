@@ -204,6 +204,9 @@ public void activate(Player player, int level) {
             UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!.");
             return;
         }
+    } catch (IllegalArgumentException e) {
+        UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!.");
+        return;
     }
     // Calculate the destination
     Location teleportLocation = origin.clone().add(teleportVector);
