@@ -243,20 +243,21 @@ public void activate(Player player, int level) {
         final VectorLine line = VectorLine.withStepSize(lineStart, lineEnd, 0.25f);
 
 
-                // Particle effect
-double playerHeight = player.getHeight(); 
-double particleSpacing = 0.1;
-Location baseLocation = player.getLocation().add(0, 0, 0);
+           // Particle effect
+        double playerHeight = player.getHeight(); 
+        double particleSpacing = 0.1;
+        Location baseLocation = player.getLocation().add(0, 0, 0);
 
-org.bukkit.Color blackColor = org.bukkit.Color.fromRGB(0, 0, 0);
+        DustOptions dustOptions = new DustOptions(Color.BLACK, 1.0F);
 
-for (Location point : line.toLocations()) {
-    for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
-        Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
+        for (Location point : line.toLocations()) {
+     
+            for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
+                Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
 
-        // Use Particle.REDSTONE with the dustOptions to spawn black particles
-        player.getWorld().spawnParticle(Particle.ENTITY_EFFECT, particleLocation, 0, 0, 0, 0, 0.1, new Particle.DustOptions(blackColor, 1.0F));
-    }
+               
+                player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, particleLocation, 0, 0, 0, 0, 0.1);
+            }
         }
 
         player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 1.2F, 2.0F);
