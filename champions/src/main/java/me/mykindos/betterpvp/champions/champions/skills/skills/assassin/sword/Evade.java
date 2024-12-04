@@ -179,13 +179,11 @@ public void onPlayerMove(PlayerMoveEvent event) {
 
     // Ignore small movements
     if (velocity.lengthSquared() < 0.01) {
+        movementDirections.put(player, new Vector(0, 0, 0)); 
         return;
     }
 
-    // Store the player's current velocity
-    movementDirections.put(player, velocity.normalize());
-}
-
+    
     
 @Override
 public void activate(Player player, int level) {
@@ -241,24 +239,10 @@ public void activate(Player player, int level) {
         final Location lineStart = origin.add(0.0, player.getHeight() / 2, 0.0);
         final Location lineEnd = player.getLocation().clone().add(0.0, player.getHeight() / 2, 0.0);
         final VectorLine line = VectorLine.withStepSize(lineStart, lineEnd, 0.25f);
-
-
-           // Particle effect
-        double playerHeight = player.getHeight(); 
-        double particleSpacing = 0.1;
-        Location baseLocation = player.getLocation().add(0, 0, 0);
-
-        DustOptions dustOptions = new DustOptions(Color.BLACK, 1.0F);
-
+        
         for (Location point : line.toLocations()) {
-     
-            for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
-                Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
-
-               
-                player.getWorld().spawnParticle(Particle.DUST_PLUME, particleLocation, 0, 0, 0, 0, 0.1);
-            }
-        }
+            Particle.DUST_PLUME.builder().location(point).count(2).receivers(100).extra(0).spawn();}
+        
         player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 1.2F, 2.0F);
     });
 }
@@ -302,5 +286,4 @@ public void activate(Player player, int level) {
             notifyCharges(player, data.getCharges());
         }
     }
-
 }
