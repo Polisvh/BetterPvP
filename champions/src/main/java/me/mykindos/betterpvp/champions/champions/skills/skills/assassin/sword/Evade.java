@@ -240,22 +240,21 @@ public void activate(Player player, int level) {
         final Location lineEnd = player.getLocation().clone().add(0.0, player.getHeight() / 2, 0.0);
         final VectorLine line = VectorLine.withStepSize(lineStart, lineEnd, 0.25f);
 
-        // Particle effect
-        double playerHeight = player.getHeight();
+
+                // Particle effect
+        double playerHeight = player.getHeight(); // Assuming 1.8 for most players, could be different for some
         double particleSpacing = 0.1;
-        Location baseLocation = player.getLocation().add(0, 0, 0);
-        
-        DustOptions dustOptions = new DustOptions(Color.BLACK, 1.0F);
-        
-        for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
-            Location particleLocation = baseLocation.clone().add(0.0, yOffset, 0.0);
-            Particle.REDSTONE.builder()
-                    .location(particleLocation)
-                    .color(org.bukkit.Color.BLACK) // Black particles
-                    .receivers(100)
-                    .count(2)
-                    .extra(0)
-                    .spawn();
+        Location baseLocation = player.getLocation().add(0, 0, 0); // This will be the starting location for particles
+
+        // Loop over the line path and spawn particles at each point
+        for (Location point : line.toLocations()) {
+            // For each point along the teleport path, spawn particles from the feet to the top of the player
+            for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
+                Location particleLocation = point.clone().add(0.0, yOffset, 0.0); // Adjust for height
+
+                // Spawn black particles using FIREWORKS (or another particle type, like SMOKE_NORMAL)
+                player.getWorld().spawnParticle(Particle.FIREWORKS_SPARK, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
+            }
         }
 
         player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 0.5F, 2.0F);
