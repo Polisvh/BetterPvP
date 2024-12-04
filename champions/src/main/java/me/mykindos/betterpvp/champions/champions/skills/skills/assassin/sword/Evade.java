@@ -256,10 +256,9 @@ public void activate(Player player, int level) {
                 Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
 
                
-                player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, particleLocation, 0, 0, 0, 0, 0.1);
+                player.getWorld().spawnParticle(Particle.DUST_PLUME, particleLocation, 0, 0, 0, 0, 0.1);
             }
         }
-
         player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 1.2F, 2.0F);
     });
 }
