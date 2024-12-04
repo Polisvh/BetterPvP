@@ -203,11 +203,13 @@ public void activate(Player player, int level) {
 
     try {
         if (teleportVector.isZero()) {
-            UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!.");
+            UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!");
             return;
         }
+
+        teleportVector.checkFinite();
     } catch (IllegalArgumentException e) {
-        UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!.");
+        UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!");
         return;
     }
     // Calculate the destination
@@ -254,11 +256,11 @@ public void activate(Player player, int level) {
                 Location particleLocation = point.clone().add(0.0, yOffset, 0.0); // Adjust for height
 
                 // Spawn black particles using FIREWORKS (or another particle type, like SMOKE_NORMAL)
-                player.getWorld().spawnParticle(Particle.DUST, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
+                player.getWorld().spawnParticle(Particle.DUST_PLUME, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
             }
         }
 
-        player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 0.5F, 2.0F);
+        player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 1.2F, 2.0F);
     });
 }
     
