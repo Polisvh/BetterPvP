@@ -182,6 +182,7 @@ public void onPlayerMove(PlayerMoveEvent event) {
         movementDirections.put(player, new Vector(0, 0, 0)); 
         return;
     }
+}
 
     
     
