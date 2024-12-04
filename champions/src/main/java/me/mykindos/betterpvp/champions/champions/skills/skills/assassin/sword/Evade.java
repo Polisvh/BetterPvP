@@ -179,9 +179,9 @@ public void onPlayerMove(PlayerMoveEvent event) {
 
     // Ignore small movements
     if (velocity.lengthSquared() < 0.01) {
-        movementDirections.put(player, new Vector(0, 0, 0)); 
         return;
     }
+    movementDirections.put(player, new Vector(0, 0, 0)); 
 }
 
     
