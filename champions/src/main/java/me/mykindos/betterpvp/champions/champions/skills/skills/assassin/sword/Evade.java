@@ -254,7 +254,7 @@ public void activate(Player player, int level) {
                 Location particleLocation = point.clone().add(0.0, yOffset, 0.0); // Adjust for height
 
                 // Spawn black particles using FIREWORKS (or another particle type, like SMOKE_NORMAL)
-                player.getWorld().spawnParticle(Particle.REDSTONE, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
+                player.getWorld().spawnParticle(Particle.DUST, particleLocation, 1, 0, 0, 0, 0.1); // Adjust the effect as needed
             }
         }
 
