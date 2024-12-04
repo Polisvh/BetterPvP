@@ -181,8 +181,10 @@ public void onPlayerMove(PlayerMoveEvent event) {
     if (velocity.lengthSquared() < 0.01) {
         return;
     }
-    movementDirections.put(player, new Vector(0, 0, 0)); 
-}
+
+    // Store the player's current velocity
+    movementDirections.put(player, velocity.normalize());
+}    
 
     
     
@@ -245,6 +247,7 @@ public void activate(Player player, int level) {
             Particle.DUST_PLUME.builder().location(point).count(2).receivers(100).extra(0).spawn();}
         
         player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 1.2F, 2.0F);
+        movementDirections.put(player, new Vector(0, 0, 0));
     });
 }
     
