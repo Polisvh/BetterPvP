@@ -1,56 +1,74 @@
-package me.mykindos.betterpvp.champions.champions.skills.skills.assassin.sword;
+package me.mykindos.betterpvp.champions.champions.skills.skills.assassin.axe;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
+import me.mykindos.betterpvp.champions.champions.skills.Skill;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
-import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
-import me.mykindos.betterpvp.champions.champions.skills.types.CooldownSkill;
-import me.mykindos.betterpvp.champions.champions.skills.types.DefensiveSkill;
+import me.mykindos.betterpvp.champions.champions.skills.skills.assassin.data.FlashData;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
+import me.mykindos.betterpvp.champions.champions.skills.types.MovementSkill;
 import me.mykindos.betterpvp.core.client.gamer.Gamer;
-import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
-import me.mykindos.betterpvp.core.combat.events.CustomEntityVelocityEvent;
 import me.mykindos.betterpvp.core.components.champions.Role;
 import me.mykindos.betterpvp.core.components.champions.SkillType;
-import me.mykindos.betterpvp.core.cooldowns.CooldownManager;
-import me.mykindos.betterpvp.core.effects.EffectTypes;
 import me.mykindos.betterpvp.core.framework.updater.UpdateEvent;
 import me.mykindos.betterpvp.core.listener.BPvPListener;
-import me.mykindos.betterpvp.core.utilities.UtilBlock;
 import me.mykindos.betterpvp.core.utilities.UtilLocation;
-import me.mykindos.betterpvp.core.utilities.UtilMath;
 import me.mykindos.betterpvp.core.utilities.UtilMessage;
-import me.mykindos.betterpvp.core.utilities.UtilTime;
-import org.bukkit.Bukkit;
+import me.mykindos.betterpvp.core.utilities.math.VectorLine;
+import me.mykindos.betterpvp.core.utilities.model.display.PermanentComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.Listener;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
+
 import java.util.Iterator;
-import java.util.UUID;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 @Singleton
 @BPvPListener
-public class Evade extends ChannelSkill implements InteractSkill, CooldownSkill, DefensiveSkill {
+public class Evade extends Skill implements InteractSkill, Listener, MovementSkill {
 
-    private final HashMap<UUID, Long> handRaisedTime = new HashMap<>();
+    private final WeakHashMap<Player, FlashData> charges = new WeakHashMap<>();
+    private final WeakHashMap<Player, Vector> movementDirections = new WeakHashMap<>();
 
-    public double duration;
-    public int forcedDamageDelay;
-    public double internalCooldown;
-    public double internalCooldownDecreasePerLevel;
+    // Action bar
+    private final PermanentComponent actionBarComponent = new PermanentComponent(gamer -> {
+        final Player player = gamer.getPlayer();
 
-    @Inject
-    private CooldownManager cooldownManager;
+        // Only display charges in hotbar if holding the weapon
+        if (player == null || !charges.containsKey(player) || !isHolding(player)) {
+            return null; // Skip if not online or not charging
+        }
+
+        final int maxCharges = getMaxCharges(getLevel(player));
+        final int newCharges = charges.get(player).getCharges();
+
+        return Component.text(getName() + " ").color(NamedTextColor.WHITE).decorate(TextDecoration.BOLD)
+                .append(Component.text("\u25A0".repeat(newCharges)).color(NamedTextColor.GREEN))
+                .append(Component.text("\u25A0".repeat(Math.max(0, maxCharges - newCharges))).color(NamedTextColor.RED));
+    });
+
+    private int baseMaxCharges;
+
+    private int chargeIncreasePerLevel;
+
+    private double baseRechargeSeconds;
+
+    private double rechargeReductionPerLevel;
+    private double teleportDistance;
 
     @Inject
     public Evade(Champions champions, ChampionsManager championsManager) {
@@ -64,18 +82,37 @@ public class Evade extends ChannelSkill implements InteractSkill, CooldownSkill,
 
     @Override
     public String[] getDescription(int level) {
-
         return new String[]{
-                "Hold right click with a Sword to channel",
+                "Right click with a Sword to activate",
                 "",
-                "If a player hits you while Evading, you",
-                "will teleport behind the attacker and your",
-                "cooldown will be set to a minimum of " + getValueString(this::getInternalCooldown, level) + " seconds ",
+                "Dodge your attacks by teleporting " + getValueString(this::getTeleportDistance, level) + " blocks",
+                "in the direction you are moving",
                 "",
-                "Hold crouch while Evading to teleport backwards",
+                "You can perform up to" + getValueString(this::getMaxCharges, level) + " evades",
                 "",
-                "Cooldown: " + getValueString(this::getCooldown, level),
+                "Gain an evade charge every: " + getValueString(this::getRechargeSeconds, level) + " seconds"
         };
+    }
+
+    private int getMaxCharges(int level) {
+        return baseMaxCharges + ((level - 1) * chargeIncreasePerLevel);
+    }
+
+    private double getRechargeSeconds(int level) {
+        return baseRechargeSeconds - ((level - 1) * rechargeReductionPerLevel);
+    }
+
+    private double getTeleportDistance(int level) {
+        return teleportDistance;
+    }
+
+    @Override
+    public void loadSkillConfig() {
+        baseMaxCharges = getConfig("baseMaxCharges", 2, Integer.class);
+        chargeIncreasePerLevel = getConfig("chargeIncreasePerLevel", 0, Integer.class);
+        baseRechargeSeconds = getConfig("baseRechargeSeconds", 8.0, Double.class);
+        rechargeReductionPerLevel = getConfig("rechargeReductionPerLevel", 1.0, Double.class);
+        teleportDistance = getConfig("teleportDistance", 3.0, Double.class);
     }
 
     @Override
@@ -88,149 +125,156 @@ public class Evade extends ChannelSkill implements InteractSkill, CooldownSkill,
         return SkillType.SWORD;
     }
 
-    public double getInternalCooldown(int level){
-        return internalCooldown - ((level - 1) * internalCooldownDecreasePerLevel);
-    }
-
-
-    @EventHandler (priority = EventPriority.LOW)
-    public void onEvade(CustomDamageEvent event) {
-        if (event.getCause() != DamageCause.ENTITY_ATTACK) return;
-        if (!(event.getDamagee() instanceof Player player)) return;
-        if (!active.contains(player.getUniqueId())) return;
-        if (event.getDamager() == null) return;
-
-        LivingEntity ent = event.getDamager();
-
-        event.setKnockback(false);
-        event.cancel("Skill Evade");
-        event.setForceDamageDelay(forcedDamageDelay);
-
-        Particle.LARGE_SMOKE.builder()
-                .offset(0.3, 0.3, 0.3)
-                .count(3)
-                .location(player.getLocation().add(0, player.getHeight() / 2, 0))
-                .receivers(60)
-                .extra(0)
-                .spawn();
-
-        final Vector direction = ent.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
-        double distance = ent.getLocation().distance(player.getLocation()) + 1.5;
-        final boolean isReverse = player.isSneaking();
-        if (isReverse) {
-            distance = 1.5;
-            direction.multiply(new Vector(-1, 1, -1)); // flip horizontal
-        }
-
-        UtilLocation.teleportToward(player, direction, distance, false, success -> {
-            if (!Boolean.TRUE.equals(success)) {
-                return;
-            }
-
-            int level = getLevel(player);
-            cooldownManager.removeCooldown(player, getName(), true);
-
-            long channelTime = System.currentTimeMillis() - handRaisedTime.get(player.getUniqueId());
-            double channelTimeInSeconds = channelTime / 1000.0;
-            double newCooldown = getInternalCooldown(level) + channelTimeInSeconds;
-
-            if (!isReverse) {
-                if (!UtilLocation.isInFront(ent, player.getLocation())) {
-                    player.setRotation(ent.getLocation().getYaw(), ent.getLocation().getPitch());
-                }
-            }
-
-            cooldownManager.use(player, getName(), newCooldown, true);
-            handRaisedTime.remove(player.getUniqueId());
-
-            UtilMessage.simpleMessage(player, getClassType().getName(), "You used <green>%s %s<gray>.", getName(), level);
-
-            if (ent instanceof Player temp) {
-                UtilMessage.simpleMessage(temp, getClassType().getName(), "<yellow>%s<gray> used <green>%s %s</green>!", player.getName(), getName(), level);
-            }
-
-            active.remove(player.getUniqueId());
-        });
-    }
-
-    @EventHandler
-    public void onCustomVelocity(CustomEntityVelocityEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (!active.contains(player.getUniqueId())) return;
-
-        if (hasSkill(player)) {
-            event.setCancelled(true);
-        }
-    }
-
-    @UpdateEvent
-    public void onUpdate() {
-        Iterator<UUID> it = active.iterator();
-        while (it.hasNext()) {
-            Player player = Bukkit.getPlayer(it.next());
-            if (player != null) {
-                Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
-                int level = getLevel(player);
-                if (level > 0) {
-                    if (!gamer.isHoldingRightClick()) {
-                        handRaisedTime.remove(player.getUniqueId());
-                        it.remove();
-                        UtilMessage.message(player, getClassType().getName(), UtilMessage.deserialize("You failed <green>%s %d</green>", getName(), level));
-                        player.getWorld().playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 2.0f, 1.0f);
-                    } else if (!handRaisedTime.containsKey(player.getUniqueId())) {
-                        it.remove();
-                    } else if (!isHolding(player)) {
-                        it.remove();
-                    } else if (UtilBlock.isInLiquid(player)) {
-                        it.remove();
-                    } else if (championsManager.getEffects().hasEffect(player, EffectTypes.SILENCE)) {
-                        it.remove();
-                    } else if (championsManager.getEffects().hasEffect(player, EffectTypes.STUN)) {
-                        it.remove();
-                    } else if (UtilTime.elapsed(handRaisedTime.get(player.getUniqueId()), (long) (duration * 1000))) {
-                        handRaisedTime.remove(player.getUniqueId());
-                        UtilMessage.simpleMessage(player, getClassType().getName(),"You failed <green>%s %d</green>", getName(), getLevel(player));
-                        player.getWorld().playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 2.0f, 1.0f);
-                        it.remove();
-                    }
-                }
-
-            } else {
-                it.remove();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onDamage(CustomDamageEvent e) {
-        if (e.getDamager() instanceof Player player) {
-            if (active.contains(player.getUniqueId())) {
-                e.cancel("Skill: Evade");
-            }
-        }
-    }
-
-    @Override
-    public double getCooldown(int level) {
-        return cooldown - (level - 1);
-    }
-
-    @Override
-    public void activate(Player player, int level) {
-        active.add(player.getUniqueId());
-        handRaisedTime.put(player.getUniqueId(), System.currentTimeMillis());
-    }
-
     @Override
     public Action[] getActions() {
         return SkillActions.RIGHT_CLICK;
     }
 
     @Override
-    public void loadSkillConfig() {
-        duration = getConfig("duration", 0.7, Double.class);
-        forcedDamageDelay = getConfig("forcedDamageDelay", 400, Integer.class);
-        internalCooldown = getConfig("internalCooldown", 0.6, Double.class);
-        internalCooldownDecreasePerLevel = getConfig("internalCooldownDecreasePerLevel", 0.1, Double.class);
+    public boolean displayWhenUsed() {
+        return false;
     }
+
+    private void notifyCharges(Player player, int charges) {
+        UtilMessage.simpleMessage(player, getClassType().getName(), "Evade Charges: <alt2>" + charges);
+    }
+
+    public boolean canUse(Player player) {
+        FlashData flashData = charges.get(player);
+        if (flashData != null && flashData.getCharges() > 0) {
+            return true;
+        }
+
+        UtilMessage.simpleMessage(player, getClassType().getName(), "You have no <alt>" + getName() + "</alt> charges.");
+        return false;
+    }
+
+    @Override
+    public void invalidatePlayer(Player player, Gamer gamer) {
+        charges.remove(player);
+        gamer.getActionBar().remove(actionBarComponent);
+    }
+
+    @Override
+    public void trackPlayer(Player player, Gamer gamer) {
+        charges.computeIfAbsent(player, k -> new FlashData());
+        gamer.getActionBar().add(900, actionBarComponent);
+    }
+
+    
+@EventHandler
+public void onPlayerMove(PlayerMoveEvent event) {
+    Player player = event.getPlayer();
+    Location from = event.getFrom();
+    Location to = event.getTo();
+
+    if (from == null || to == null) {
+        return;
+    }
+
+    // Calculate the current velocity vector
+    Vector velocity = to.toVector().subtract(from.toVector());
+
+    // Ignore small movements
+    if (velocity.lengthSquared() < 0.01) {
+        return;
+    }
+
+    // Store the player's current velocity
+    movementDirections.put(player, velocity.normalize());
+}
+
+    
+@Override
+public void activate(Player player, int level) {
+    final Location origin = player.getLocation();
+    Vector movementVector = movementDirections.getOrDefault(player, new Vector(0, 0, 0)); // Get current movement vector
+
+    // Check if the player is moving
+    if (movementVector.lengthSquared() <= 0.01) {
+        UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction");
+        return;
+    }
+
+    // Normalize the movement vector and scale it by teleport distance
+    Vector teleportVector = movementVector.clone().normalize().multiply(teleportDistance);
+
+    // Calculate the destination
+    Location teleportLocation = origin.clone().add(teleportVector);
+
+    // Perform the teleport
+    UtilLocation.teleportToward(player, teleportVector, teleportDistance, false, success -> {
+        if (!Boolean.TRUE.equals(success)) {
+            return;
+        }
+
+        // Handle cooldown and reduce charges
+        FlashData flashData = charges.get(player);
+        if (flashData == null) {
+            return;
+        }
+
+        final int curCharges = flashData.getCharges();
+        final int maxCharges = getMaxCharges(getLevel(player));
+        if (curCharges >= maxCharges) {
+            championsManager.getCooldowns().use(player, getName(), getRechargeSeconds(getLevel(player)), false, true, true);
+        }
+
+        final int newCharges = curCharges - 1;
+        flashData.setCharges(newCharges);
+
+        // Notify charges and play effects
+        notifyCharges(player, newCharges);
+        final Location lineStart = origin.add(0.0, player.getHeight() / 2, 0.0);
+        final Location lineEnd = player.getLocation().clone().add(0.0, player.getHeight() / 2, 0.0);
+        final VectorLine line = VectorLine.withStepSize(lineStart, lineEnd, 0.25f);
+        for (Location point : line.toLocations()) {
+            Particle.FIREWORK.builder().location(point).count(2).receivers(100).extra(0).spawn();
+        }
+
+        player.getWorld().playSound(origin, Sound.ENTITY_IRONGOLEM_HIT, 0.4F, 2.0F);
+    });
+}
+    
+    private Vector rotateVector(Vector vector, double angle) {
+    double radians = Math.toRadians(angle);
+    double cos = Math.cos(radians);
+    double sin = Math.sin(radians);
+
+    // Rotate around Y-axis
+    double x = vector.getX() * cos - vector.getZ() * sin;
+    double z = vector.getX() * sin + vector.getZ() * cos;
+
+    return new Vector(x, 0, z); // Keep Y-axis unchanged
+}
+
+    @UpdateEvent(delay = 100)
+    public void recharge() {
+        final Iterator<Map.Entry<Player, FlashData>> iterator = charges.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<Player, FlashData> entry = iterator.next();
+            final Player player = entry.getKey();
+            final int level = getLevel(player);
+            if (level <= 0) {
+                iterator.remove();
+                continue;
+            }
+
+            final FlashData data = entry.getValue();
+            final int maxCharges = getMaxCharges(level);
+
+            if (data.getCharges() >= maxCharges) {
+                continue; // skip if already at max charges
+            }
+
+            if (!championsManager.getCooldowns().use(player, getName(), getRechargeSeconds(level), false, true, false)) {
+                continue; // skip if not enough time has passed
+            }
+
+            // add a charge
+            data.addCharge();
+            notifyCharges(player, data.getCharges());
+        }
+    }
+
 }
