@@ -31,6 +31,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.Listener;
 import org.bukkit.util.Vector;
+import org.bukkit.Particle.DustOptions;
+import org.bukkit.Color;
 
 
 import java.util.Iterator;
@@ -242,7 +244,9 @@ public void activate(Player player, int level) {
         double playerHeight = player.getHeight();
         double particleSpacing = 0.1;
         Location baseLocation = player.getLocation().add(0, 0, 0);
-
+        
+        DustOptions dustOptions = new DustOptions(Color.BLACK, 1.0F);
+        
         for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
             Location particleLocation = baseLocation.clone().add(0.0, yOffset, 0.0);
             Particle.REDSTONE.builder()
@@ -254,7 +258,7 @@ public void activate(Player player, int level) {
                     .spawn();
         }
 
-        player.getWorld().playSound(origin, Sound.ENTITY_IRONGOLEM_HIT, 0.4F, 2.0F);
+        player.getWorld().playSound(origin, Sound.ENTITY_IRON_GOLEM_ATTACK, 0.5F, 2.0F);
     });
 }
     
