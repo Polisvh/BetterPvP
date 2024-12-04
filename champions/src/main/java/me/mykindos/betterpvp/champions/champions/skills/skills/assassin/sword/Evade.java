@@ -255,7 +255,7 @@ for (Location point : line.toLocations()) {
         Location particleLocation = point.clone().add(0.0, yOffset, 0.0);
 
         // Use Particle.REDSTONE with the dustOptions to spawn black particles
-        player.getWorld().spawnParticle(Particle.ENTITY_EFFECT, particleLocation, 0, 0, 0, 0, 0.1, new Particle.Color(blackColor, 1.0F));
+        player.getWorld().spawnParticle(Particle.ENTITY_EFFECT, particleLocation, 0, 0, 0, 0, 0.1, new Particle.DustOptions(blackColor, 1.0F));
     }
         }
 
