@@ -154,12 +154,12 @@ skills:
     evade:
       enabled: true
       maxlevel: 3
-      cooldown: 15.0
-      duration: 0.7
-      forcedDamageDelay: 400
-      cooldownDecreasePerLevel: 1.0
-      internalCooldown: 0.6
-      internalCooldownDecreasePerLevel: 0.1
+      baseMaxCharges: 2
+      baseRechargeSeconds: 8.0
+      teleportDistance: 3.0
+      canUseWhileSlowed: true
+      chargeIncreasePerLevel: 0
+      rechargeReductionPerLevel: 1.0
   knight:
     shieldsmash:
       enabled: true
