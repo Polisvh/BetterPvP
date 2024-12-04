@@ -90,7 +90,7 @@ public class Evade extends Skill implements InteractSkill, Listener, MovementSki
                 "Dodge your attacks by teleporting " + getValueString(this::getTeleportDistance, level) + " blocks",
                 "in the direction you are moving",
                 "",
-                "You can perform up to" + getValueString(this::getMaxCharges, level) + " evades",
+                "You can perform up to " + getValueString(this::getMaxCharges, level) + " evades",
                 "",
                 "Gain an evade charge every: " + getValueString(this::getRechargeSeconds, level) + " seconds"
         };
