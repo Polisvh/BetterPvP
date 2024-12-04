@@ -6,7 +6,7 @@ import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
 import me.mykindos.betterpvp.champions.champions.skills.Skill;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
-import me.mykindos.betterpvp.champions.champions.skills.skills.assassin.data.FlashData;
+import me.mykindos.betterpvp.champions.champions.skills.skills.assassin.data.EvadeData;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.MovementSkill;
 import me.mykindos.betterpvp.core.client.gamer.Gamer;
@@ -41,7 +41,7 @@ import java.util.WeakHashMap;
 @BPvPListener
 public class Evade extends Skill implements InteractSkill, Listener, MovementSkill {
 
-    private final WeakHashMap<Player, FlashData> charges = new WeakHashMap<>();
+    private final WeakHashMap<Player, EvadeData> charges = new WeakHashMap<>();
     private final WeakHashMap<Player, Vector> movementDirections = new WeakHashMap<>();
 
     // Action bar
@@ -140,8 +140,8 @@ public class Evade extends Skill implements InteractSkill, Listener, MovementSki
     }
 
     public boolean canUse(Player player) {
-        FlashData flashData = charges.get(player);
-        if (flashData != null && flashData.getCharges() > 0) {
+        EvadeData evadeData = charges.get(player);
+        if (evadeData != null && evadeData.getCharges() > 0) {
             return true;
         }
 
@@ -157,7 +157,7 @@ public class Evade extends Skill implements InteractSkill, Listener, MovementSki
 
     @Override
     public void trackPlayer(Player player, Gamer gamer) {
-        charges.computeIfAbsent(player, k -> new FlashData());
+        charges.computeIfAbsent(player, k -> new EvadeData());
         gamer.getActionBar().add(900, actionBarComponent);
     }
 
@@ -199,6 +199,12 @@ public void activate(Player player, int level) {
     // Normalize the movement vector and scale it by teleport distance
     Vector teleportVector = movementVector.clone().normalize().multiply(teleportDistance);
 
+    try {
+        if (teleportVector.isZero()) {
+            UtilMessage.simpleMessage(player, "Assassin", "You aren't moving in any direction!.");
+            return;
+        }
+    }
     // Calculate the destination
     Location teleportLocation = origin.clone().add(teleportVector);
 
@@ -209,27 +215,40 @@ public void activate(Player player, int level) {
         }
 
         // Handle cooldown and reduce charges
-        FlashData flashData = charges.get(player);
-        if (flashData == null) {
+        EvadeData evadeData = charges.get(player);
+        if (evadeData == null) {
             return;
         }
 
-        final int curCharges = flashData.getCharges();
+        final int curCharges = evadeData.getCharges();
         final int maxCharges = getMaxCharges(getLevel(player));
         if (curCharges >= maxCharges) {
             championsManager.getCooldowns().use(player, getName(), getRechargeSeconds(getLevel(player)), false, true, true);
         }
 
         final int newCharges = curCharges - 1;
-        flashData.setCharges(newCharges);
+        evadeData.setCharges(newCharges);
 
         // Notify charges and play effects
         notifyCharges(player, newCharges);
         final Location lineStart = origin.add(0.0, player.getHeight() / 2, 0.0);
         final Location lineEnd = player.getLocation().clone().add(0.0, player.getHeight() / 2, 0.0);
         final VectorLine line = VectorLine.withStepSize(lineStart, lineEnd, 0.25f);
-        for (Location point : line.toLocations()) {
-            Particle.FIREWORK.builder().location(point).count(2).receivers(100).extra(0).spawn();
+
+        // Particle effect
+        double playerHeight = player.getHeight();
+        double particleSpacing = 0.1;
+        Location baseLocation = player.getLocation().add(0, 0, 0);
+
+        for (double yOffset = 0; yOffset <= playerHeight; yOffset += particleSpacing) {
+            Location particleLocation = baseLocation.clone().add(0.0, yOffset, 0.0);
+            Particle.REDSTONE.builder()
+                    .location(particleLocation)
+                    .color(org.bukkit.Color.BLACK) // Black particles
+                    .receivers(100)
+                    .count(2)
+                    .extra(0)
+                    .spawn();
         }
 
         player.getWorld().playSound(origin, Sound.ENTITY_IRONGOLEM_HIT, 0.4F, 2.0F);
@@ -241,18 +260,17 @@ public void activate(Player player, int level) {
     double cos = Math.cos(radians);
     double sin = Math.sin(radians);
 
-    // Rotate around Y-axis
     double x = vector.getX() * cos - vector.getZ() * sin;
     double z = vector.getX() * sin + vector.getZ() * cos;
 
-    return new Vector(x, 0, z); // Keep Y-axis unchanged
+    return new Vector(x, 0, z);
 }
 
     @UpdateEvent(delay = 100)
     public void recharge() {
-        final Iterator<Map.Entry<Player, FlashData>> iterator = charges.entrySet().iterator();
+        final Iterator<Map.Entry<Player, EvadeData>> iterator = charges.entrySet().iterator();
         while (iterator.hasNext()) {
-            final Map.Entry<Player, FlashData> entry = iterator.next();
+            final Map.Entry<Player, EvadeData> entry = iterator.next();
             final Player player = entry.getKey();
             final int level = getLevel(player);
             if (level <= 0) {
@@ -260,7 +278,7 @@ public void activate(Player player, int level) {
                 continue;
             }
 
-            final FlashData data = entry.getValue();
+            final EvadeData data = entry.getValue();
             final int maxCharges = getMaxCharges(level);
 
             if (data.getCharges() >= maxCharges) {
