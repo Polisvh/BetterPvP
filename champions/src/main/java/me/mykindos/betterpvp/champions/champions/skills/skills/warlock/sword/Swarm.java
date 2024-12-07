@@ -90,8 +90,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     public float getEnergy(int level) {
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
-
-    @Override
     public double getCooldown(int level) {
         return cooldown - ((level - 1) * cooldownDecreasePerLevel);
     }
