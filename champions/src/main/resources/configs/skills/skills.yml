@@ -943,10 +943,10 @@ skills:
   swarm:
       enabled: true
       maxlevel: 5
-      energy: 130
+      energy: 110
       batLifespan: 1.0
       batDamage: 1.0
-      energyDecreasePerLevel: 15.0
+      energyDecreasePerLevel: 10.0
       cooldown: 14.0
       cooldownDecreasePerLevel: 1.0
     bloodbarrier:
