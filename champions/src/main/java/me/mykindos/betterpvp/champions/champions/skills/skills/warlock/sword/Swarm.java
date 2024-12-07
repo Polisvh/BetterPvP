@@ -275,6 +275,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         batDamage = getConfig("batDamage", 1.0, Double.class);
         cooldown = getConfig("cooldown", 14.0, Double.class);
         cooldownDecreasePerLevel = getConfig("cooldownDecreasePerLevel", 1.0, Double.class);
+        energy = getConfig("energy", 110, Integer.class);
+        energyDecreasePerLevel = getConfig("energyDecreasePerLevel", 10.0, Double.class);
     }
 
     @Override
