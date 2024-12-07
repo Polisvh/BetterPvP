@@ -176,7 +176,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     // Get the player's pitch angle (in degrees)
     float pitch = player.getLocation().getPitch();
        
-    double pitchMultiplier;
+    double pitchMultiplier = 1.0;
        
     if (pitch > 0) {
         pitchMultiplier = 1.0 - Math.abs(pitch) / 90.0; // As pitch increases, reduce speed.
