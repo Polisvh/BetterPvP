@@ -108,7 +108,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     @UpdateEvent
     public void checkChannelling() {
-
         final Iterator<UUID> iterator = active.iterator();
         while (iterator.hasNext()) {
             Player cur = Bukkit.getPlayer(iterator.next());
@@ -131,30 +130,149 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             } else if (!isHolding(cur)) {
                 iterator.remove();
             } else {
-                if (batData.containsKey(cur)) {
-                    for (int i = 0; i < 5; i++) { // Adjust number of bats per tick if needed
-                    Location spawnLocation = cur.getLocation().add(
-                    Math.random() * 3 - 1.5,  // Random x offset (-1.5 to 1.5)
-                    Math.random() * 1.2,      // Random y offset (0 to 1.5)
-                    Math.random() * 3 - 1.5   // Random z offset (-1.5 to 1.5)
-                    );
 
-                Bat bat = cur.getWorld().spawn(spawnLocation, Bat.class);
-                bat.setHealth(1);
-                bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
-                        
-                Vector batDirection = cur.getLocation().getDirection();
-                bat.setVelocity(batDirection.multiply(1.5));
-                
+                if (batData.containsKey(cur)) {
+                    Bat bat = cur.getWorld().spawn(cur.getLocation().add(
+                            Math.random() * 3 - 1.5,   // Random x offset
+                            Math.random() * 1.5,        // Random y offset
+                            Math.random() * 3 - 1.5     // Random z offset
+                    ), Bat.class);
+
+                    bat.setHealth(1);
+                    bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
+
+                    Vector direction = cur.getLocation().getDirection();
+                    bat.setVelocity(direction.multiply(1.2));
+
+                    batData.get(cur).add(new BatData(bat, System.currentTimeMillis(), cur.getLocation()));
+                }
+
+                // Apply custom velocity to the player
                 Vector dir = cur.getLocation().getDirection();
-                double yLimit = 0.3;
-                        
+                double yLimit = 0.3; // Adjust this value as per the intended "flight" feel
+                applyCustomVelocity(cur, dir, 0.6, yLimit);
+
+            }
+        }
+    }
+    private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
+        // Scale the direction for the desired speed
+        Vector velocity = direction.multiply(speed);
+
+        // Apply vertical limit
+        if (velocity.getY() > yLimit) {
+            velocity.setY(yLimit);
+        }
+
+        // Apply the velocity to the player
+        player.setVelocity(velocity);
+    }
+
+
+
+    @UpdateEvent(delay = 100)
+    public void batHit() {
+        for (Player player : batData.keySet()) {
+            for (BatData batData : batData.get(player)) {
+                Bat bat = batData.getBat();
+                Vector rand = new Vector((Math.random() - 0.5D) / 3.0D, (Math.random() - 0.5D) / 3.0D, (Math.random() - 0.5D) / 3.0D);
+                bat.setVelocity(batData.getLoc().getDirection().clone().multiply(0.5D).add(rand));
+
+                for (var data : UtilEntity.getNearbyEntities(player, bat.getLocation(), 3, EntityProperty.ENEMY)) {
+                    LivingEntity other = data.get();
+
+                    if (other instanceof Bat) continue;
+                    if (!hitPlayer(bat.getLocation(), other)) continue;
+
+                    if (other instanceof Player) {
+                        if (batCD.containsKey(other)) {
+                            if (!UtilTime.elapsed(batCD.get(other), 500)) continue;
+                        }
+                        batCD.put((Player) other, System.currentTimeMillis());
+                        championsManager.getEffects().addEffect(other, EffectTypes.SHOCK, 800L);
+                    }
+
+                    final CustomDamageEvent event = new CustomDamageEvent(other,
+                            player,
+                            null,
+                            DamageCause.CUSTOM,
+                            batDamage,
+                            false,
+                            getName());
+                    UtilDamage.doCustomDamage(event);
+
+                    if (!event.isCancelled()) {
+                        Vector vector = bat.getLocation().getDirection();
+                        final VelocityData velocityData = new VelocityData(vector, 0.4d, 0.2d, 7.5d, true);
+                        UtilVelocity.velocity(other, player, velocityData);
+
+                        bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_BAT_HURT, 0.1F, 0.7F);
+                    }
+
+                    bat.remove();
                 }
             }
         }
     }
-}
 
+
+    @UpdateEvent(delay = 500)
+    public void destroyBats() {
+
+        Iterator<Entry<Player, ArrayList<BatData>>> iterator = batData.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<Player, ArrayList<BatData>> data = iterator.next();
+            ListIterator<BatData> batIt = data.getValue().listIterator();
+            while (batIt.hasNext()) {
+                BatData bat = batIt.next();
+
+                if (bat.getBat() == null || bat.getBat().isDead()) {
+                    batIt.remove();
+                    continue;
+                }
+
+                if (UtilTime.elapsed(bat.getTimer(), (long) batLifespan * 1000)) {
+                    bat.getBat().remove();
+                    batIt.remove();
+
+                }
+            }
+
+            if (data.getValue().isEmpty()) {
+                iterator.remove();
+            }
+        }
+    }
+
+    @Override
+    public void activate(Player player, int level) {
+        active.add(player.getUniqueId());
+        if (!batData.containsKey(player)) {
+            batData.put(player, new ArrayList<>());
+        }
+    }
+
+    @Override
+    public void loadSkillConfig() {
+        batLifespan = getConfig("batLifespan", 2.0, Double.class);
+        batDamage = getConfig("batDamage", 1.0, Double.class);
+    }
+
+    @Override
+    public Action[] getActions() {
+        return SkillActions.RIGHT_CLICK;
+    }
+
+    @Data
+    private static class BatData {
+
+        private final Bat bat;
+        private final long timer;
+        private final Location loc;
+
+    }
+
+}
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
     // Scale the direction for the desired speed
     Vector velocity = direction.multiply(speed);
