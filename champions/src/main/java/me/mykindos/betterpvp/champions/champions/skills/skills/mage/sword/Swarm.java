@@ -140,11 +140,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                     );
 
                 Bat bat = cur.getWorld().spawn(spawnLocation, Bat.class);
-                    bat.setHealth(1);
-                    bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
+                bat.setHealth(1);
+                bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
                         
-                    Vector batDirection = cur.getLocation().getDirection();
-                    bat.setVelocity(batDirection.multiply(1.5));
+                Vector batDirection = cur.getLocation().getDirection();
+                bat.setVelocity(batDirection.multiply(1.5));
 
                 }
                 Vector dir = cur.getLocation().getDirection();
@@ -155,6 +155,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             }
         }
     }
+}
 
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
     // Scale the direction for the desired speed
