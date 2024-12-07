@@ -171,6 +171,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     private void finishSwarm(Player player) {
         championsManager.getCooldowns().use(player, getName(), getCooldown(getLevel(player)), true,
                 true, false, isHolding(player) && (getType() == SkillType.SWORD));
+        player.setFallDistance(0);
     }
 
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
