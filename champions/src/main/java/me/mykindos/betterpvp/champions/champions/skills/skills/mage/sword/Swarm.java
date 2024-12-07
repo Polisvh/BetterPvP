@@ -51,8 +51,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     private double batLifespan;
     private double batDamage;
-    private double cooldown; 
-    private double cooldownDecreasePerLevel; 
+    private double cooldown;
+    private double cooldownDecreasePerLevel;
 
     @Inject
     public Swarm(Champions champions, ChampionsManager championsManager) {
@@ -93,6 +93,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     public float getEnergy(int level) {
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
+
     public double getCooldown(int level) {
         return cooldown - ((level - 1) * cooldownDecreasePerLevel);
     }
@@ -131,12 +132,12 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
             Gamer gamer = championsManager.getClientManager().search().online(cur).getGamer();
             if (!gamer.isHoldingRightClick()) {
-                finishSwarm(cur); 
+                finishSwarm(cur);
                 iterator.remove();
                 continue;
             }
 
-             int level = getLevel(cur);
+            int level = getLevel(cur);
             if (level <= 0) {
                 finishSwarm(cur); // Finish and apply cooldown
                 iterator.remove();
@@ -169,8 +170,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         }
     }
 
-     private void finishSwarm(Player player) {
-    championsManager.getCooldowns().use(player, getName(), getCooldown(getLevel(player)), true,
+    private void finishSwarm(Player player) {
+        championsManager.getCooldowns().use(player, getName(), getCooldown(getLevel(player)), true,
                 true, false, isHolding(player) && (getType() == SkillType.SWORD));
     }
 
@@ -187,7 +188,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         // Apply the velocity to the player
         player.setVelocity(velocity);
     }
-
 
 
     @UpdateEvent(delay = 100)
@@ -279,7 +279,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         cooldown = getConfig("cooldown", 14.0, Double.class);
         cooldownDecreasePerLevel = getConfig("cooldownDecreasePerLevel", 1.0, Double.class);
     }
-    }
 
     @Override
     public Action[] getActions() {
@@ -294,5 +293,4 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         private final Location loc;
 
     }
-
 }
