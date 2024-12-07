@@ -140,10 +140,26 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                     batData.get(cur).add(new BatData(bat, System.currentTimeMillis(), cur.getLocation()));
 
                 }
+                Vector dir = cur.getLocation().getDirection();
+                double yLimit = 0.3; // Adjust this value as per the intended "flight" feel
+                    if (!cur.isSneaking()) {
+                    applyCustomVelocity(cur, dir, 0.6, yLimit);
+                }
             }
         }
-
     }
+
+    private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
+    // Scale the direction for the desired speed
+    Vector velocity = direction.multiply(speed);
+
+    // Apply vertical limit
+    if (velocity.getY() > yLimit) {
+        velocity.setY(yLimit);
+    }
+    // Apply the velocity to the player
+    player.setVelocity(velocity);
+}
 
     @UpdateEvent(delay = 100)
     public void batHit() {
