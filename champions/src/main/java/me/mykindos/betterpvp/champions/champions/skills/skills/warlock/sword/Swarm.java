@@ -185,8 +185,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     double adjustedSpeed = baseSpeed * pitchMultiplier;
 
     // Ensure the speed isn't negative or too small.
-    if (adjustedSpeed < 0.3) {
-        adjustedSpeed = 0.3; // Minimum speed threshold
+    if (adjustedSpeed < 0.4) {
+        adjustedSpeed = 0.4; // Minimum speed threshold
     }
 
     // Apply the calculated velocity to the player, maintaining a limit on vertical velocity.
