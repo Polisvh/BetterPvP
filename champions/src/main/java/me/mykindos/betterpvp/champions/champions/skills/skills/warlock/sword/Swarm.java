@@ -175,12 +175,13 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
    private void applyCustomVelocity(Player player, Vector direction, double baseSpeed, double yLimit) {
     // Get the player's pitch angle (in degrees)
     float pitch = player.getLocation().getPitch();
-
-    // Map the pitch to a multiplier for speed. The pitch ranges from -90 (looking down) to 90 (looking up).
-    // You can adjust these values to fine-tune the behavior.
-    double pitchMultiplier = 1.0 - Math.abs(pitch) / 90.0; // This scales between 1 (looking forward) and 0 (looking up).
-
-    // Apply the pitch multiplier to the base speed, reducing it when looking upwards.
+       
+    double pitchMultiplier;
+       
+    if (pitch > 0) {
+        pitchMultiplier = 1.0 - Math.abs(pitch) / 90.0; // As pitch increases, reduce speed.
+    }
+       
     double adjustedSpeed = baseSpeed * pitchMultiplier;
 
     // Ensure the speed isn't negative or too small.
