@@ -50,8 +50,9 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     private final WeakHashMap<Player, ArrayList<BatData>> batData = new WeakHashMap<>();
 
     private double batLifespan;
-
     private double batDamage;
+    private double cooldown; 
+    private double cooldownDecreasePerLevel; 
 
     @Inject
     public Swarm(Champions champions, ChampionsManager championsManager) {
@@ -73,7 +74,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 "damage and knock back any enemies",
                 "they come in contact with",
                 "",
-                "Energy: " + getValueString(this::getEnergy, level)
+                "Energy: " + getValueString(this::getEnergy, level),
+                "Cooldown: " + getValueString(this::getCooldown, level) + " seconds"
         };
     }
 
@@ -90,6 +92,9 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     @Override
     public float getEnergy(int level) {
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
+    }
+    public double getCooldown(int level) {
+        return cooldown - ((level - 1) * cooldownDecreasePerLevel);
     }
 
 
@@ -116,19 +121,30 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 iterator.remove();
                 continue;
             }
-
-            Gamer gamer = championsManager.getClientManager().search().online(cur).getGamer();
-            if (!gamer.isHoldingRightClick()) {
+            if (championsManager.getCooldowns().hasCooldown(cur, getName())) {
+                UtilMessage.simpleMessage(cur, "Cooldown", "You cannot use <alt>%s</alt> for <alt>%s</alt> seconds.",
+                        getName(),
+                        Math.max(0, championsManager.getCooldowns().getAbilityRecharge(cur, getName()).getRemaining()));
                 iterator.remove();
                 continue;
             }
 
-            int level = getLevel(cur);
+            Gamer gamer = championsManager.getClientManager().search().online(cur).getGamer();
+            if (!gamer.isHoldingRightClick()) {
+                finishSwarm(cur); 
+                iterator.remove();
+                continue;
+            }
+
+             int level = getLevel(cur);
             if (level <= 0) {
+                finishSwarm(cur); // Finish and apply cooldown
                 iterator.remove();
             } else if (!championsManager.getEnergy().use(cur, getName(), getEnergy(level) / 20, true)) {
+                finishSwarm(cur); // Finish and apply cooldown
                 iterator.remove();
             } else if (!isHolding(cur)) {
+                finishSwarm(cur); // Finish and apply cooldown
                 iterator.remove();
             } else {
                 if (batData.containsKey(cur)) {
@@ -151,6 +167,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 applyCustomVelocity(cur, dir, 0.6, yLimit);
             }
         }
+    }
+
+     private void finishSwarm(Player player) {
+    championsManager.getCooldowns().use(player, getName(), getCooldown(getLevel(player)), true,
+                true, false, isHolding(player) && (getType() == SkillType.SWORD));
     }
 
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
@@ -253,8 +274,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     @Override
     public void loadSkillConfig() {
-        batLifespan = getConfig("batLifespan", 2.0, Double.class);
+        batLifespan = getConfig("batLifespan", 1.0, Double.class);
         batDamage = getConfig("batDamage", 1.0, Double.class);
+        cooldown = getConfig("cooldown", 14.0, Double.class);
+        cooldownDecreasePerLevel = getConfig("cooldownDecreasePerLevel", 1.0, Double.class);
+    }
     }
 
     @Override
