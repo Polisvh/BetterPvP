@@ -403,15 +403,6 @@ skills:
       slowDuration: 4.0
       baseShockDuration: 2.0
       velocityStrength: 3.0
-    swarm:
-      enabled: true
-      maxlevel: 5
-      energy: 130
-      batLifespan: 1.0
-      batDamage: 1.0
-      energyDecreasePerLevel: 15.0
-      cooldown: 14.0
-      cooldownDecreasePerLevel: 1.0
     immolate:
       enabled: true
       maxlevel: 3
@@ -949,6 +940,15 @@ skills:
       radius: 5.0
       radiusIncreasePerLevel: 0.0
   warlock:
+  swarm:
+      enabled: true
+      maxlevel: 5
+      energy: 130
+      batLifespan: 1.0
+      batDamage: 1.0
+      energyDecreasePerLevel: 15.0
+      cooldown: 14.0
+      cooldownDecreasePerLevel: 1.0
     bloodbarrier:
       enabled: true
       maxlevel: 5
