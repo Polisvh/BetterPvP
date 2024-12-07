@@ -407,9 +407,11 @@ skills:
       enabled: true
       maxlevel: 5
       energy: 130
-      batLifespan: 2.0
+      batLifespan: 1.0
       batDamage: 1.0
       energyDecreasePerLevel: 15.0
+      cooldown: 14.0
+      cooldownDecreasePerLevel: 1.0
     immolate:
       enabled: true
       maxlevel: 3
