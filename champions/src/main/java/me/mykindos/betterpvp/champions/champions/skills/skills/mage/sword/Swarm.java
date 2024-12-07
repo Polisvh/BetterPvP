@@ -145,11 +145,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                         
                 Vector batDirection = cur.getLocation().getDirection();
                 bat.setVelocity(batDirection.multiply(1.5));
-                destroyBats();
-
-                }
+                
                 Vector dir = cur.getLocation().getDirection();
                 double yLimit = 0.3;
+                        
+                }
             }
         }
     }
