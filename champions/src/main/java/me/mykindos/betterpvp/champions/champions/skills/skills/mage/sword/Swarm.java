@@ -133,17 +133,41 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             } else {
                 if (batData.containsKey(cur)) {
 
-                    Bat bat = cur.getWorld().spawn(cur.getLocation().add(0, 0.5, 0), Bat.class);
+                    Bat bat = cur.getWorld().spawn(cur.getLocation().add(
+
+                            Math.random() * 3 - 1.5,  // Random x offset (-1.5 to 1.5)
+                            Math.random() * 1.5,      // Random y offset (0 to 1.5)
+                            Math.random() * 3 - 1.5   // Random z offset (-1.5 to 1.5)
+                    ), Bat.class);
+
                     bat.setHealth(1);
                     bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
                     bat.setVelocity(cur.getLocation().getDirection().multiply(2));
                     batData.get(cur).add(new BatData(bat, System.currentTimeMillis(), cur.getLocation()));
-
                 }
+                // Apply custom velocity to the player
+                Vector dir = cur.getLocation().getDirection();
+                double yLimit = 0.3; // Adjust this value as per the intended "flight" feel
+                applyCustomVelocity(cur, dir, 0.6, yLimit);
             }
         }
-
     }
+
+    private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
+
+        // Scale the direction for the desired speed
+        Vector velocity = direction.multiply(speed);
+
+        // Apply vertical limit
+        if (velocity.getY() > yLimit) {
+            velocity.setY(yLimit);
+        }
+
+        // Apply the velocity to the player
+        player.setVelocity(velocity);
+    }
+
+
 
     @UpdateEvent(delay = 100)
     public void batHit() {
