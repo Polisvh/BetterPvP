@@ -132,12 +132,19 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 iterator.remove();
             } else {
                 if (batData.containsKey(cur)) {
+                    for (int i = 0; i < 5; i++) { // Adjust number of bats per tick if needed
+                    Location spawnLocation = cur.getLocation().add(
+                    Math.random() * 3 - 1.5,  // Random x offset (-1.5 to 1.5)
+                    Math.random() * 1.5,      // Random y offset (0 to 1.5)
+                    Math.random() * 3 - 1.5   // Random z offset (-1.5 to 1.5)
+                    );
 
-                    Bat bat = cur.getWorld().spawn(cur.getLocation().add(0, 0.5, 0), Bat.class);
+                Bat bat = cur.getWorld().spawn(spawnLocation, Bat.class);
                     bat.setHealth(1);
                     bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
-                    bat.setVelocity(cur.getLocation().getDirection().multiply(2));
-                    batData.get(cur).add(new BatData(bat, System.currentTimeMillis(), cur.getLocation()));
+                        
+                    Vector batDirection = cur.getLocation().getDirection();
+                    bat.setVelocity(batDirection.multiply(1.5));
 
                 }
                 Vector dir = cur.getLocation().getDirection();
