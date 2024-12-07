@@ -155,6 +155,10 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             }
         }
     }
+
+
+
+    
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
         // Scale the direction for the desired speed
         Vector velocity = direction.multiply(speed);
@@ -272,7 +276,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     }
 
-}
     private void applyCustomVelocity(Player player, Vector direction, double speed, double yLimit) {
     // Scale the direction for the desired speed
     Vector velocity = direction.multiply(speed);
