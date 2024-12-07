@@ -1,4 +1,4 @@
-package me.mykindos.betterpvp.champions.champions.skills.skills.mage.sword;
+package me.mykindos.betterpvp.champions.champions.skills.skills.warlock.sword;
 
 
 import com.google.inject.Inject;
@@ -68,8 +68,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 "Hold right click with a Sword to channel",
                 "",
                 "Release a swarm of bats which",
-                "damage and knock back any enemies",
-                "they come in contact with",
+                "carry you towards your facing direction",
+                "Each bat deals 1 damage and knocks back enemies",
                 "",
                 "Energy: " + getValueString(this::getEnergy, level),
                 "Cooldown: " + getValueString(this::getCooldown, level) + " seconds"
@@ -78,7 +78,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     @Override
     public Role getClassType() {
-        return Role.MAGE;
+        return Role.WARLOCK;
     }
 
     @Override
