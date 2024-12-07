@@ -135,7 +135,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                     for (int i = 0; i < 5; i++) { // Adjust number of bats per tick if needed
                     Location spawnLocation = cur.getLocation().add(
                     Math.random() * 3 - 1.5,  // Random x offset (-1.5 to 1.5)
-                    Math.random() * 1.5,      // Random y offset (0 to 1.5)
+                    Math.random() * 1.2,      // Random y offset (0 to 1.5)
                     Math.random() * 3 - 1.5   // Random z offset (-1.5 to 1.5)
                     );
 
@@ -145,13 +145,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                         
                 Vector batDirection = cur.getLocation().getDirection();
                 bat.setVelocity(batDirection.multiply(1.5));
+                destroyBats();
 
                 }
                 Vector dir = cur.getLocation().getDirection();
-                double yLimit = 0.3; // Adjust this value as per the intended "flight" feel
-                    if (!cur.isSneaking()) {
-                    applyCustomVelocity(cur, dir, 0.6, yLimit);
-                }
+                double yLimit = 0.3;
             }
         }
     }
@@ -213,7 +211,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             }
         }
     }
-
 
     @UpdateEvent(delay = 500)
     public void destroyBats() {
