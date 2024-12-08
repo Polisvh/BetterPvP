@@ -154,14 +154,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             Player player = Bukkit.getPlayer(iterator.next());
             if (player == null) {
                 iterator.remove();
+                stopPulling(player);
                 continue;
             }
 
-            stopPulling(player);
-            continue;
 
-
-            // Ensure the player has bats spawned
             ArrayList<BatData> bats = batData.get(player);
             if (bats == null || bats.isEmpty()) {
                 continue;
