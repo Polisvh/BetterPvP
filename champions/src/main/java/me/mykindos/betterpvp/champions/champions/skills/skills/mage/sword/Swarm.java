@@ -94,7 +94,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     
 
 
-    @UpdateEvent
+    @UpdateEvent(delay = 100)
     public void channeling() {
         final Iterator<UUID> iterator = active.iterator();
         while (iterator.hasNext()) {
