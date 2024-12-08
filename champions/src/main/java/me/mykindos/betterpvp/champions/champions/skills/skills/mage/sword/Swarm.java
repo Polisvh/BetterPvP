@@ -262,11 +262,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
         }
     }
 
-    @Override
-    public void activate(Player player, int level) {
-    active.add(player.getUniqueId());
-    spawnBats(player, getLevel(player));
-    }
+@Override
+public void activate(Player player, int level) {
+active.add(player.getUniqueId());
+spawnBats(player, getLevel(player));
+}
 
 
 
@@ -274,10 +274,7 @@ private void spawnBats(Player player, int level) {
 
 double cooldownTime = getCooldown(level);
 
-if (championsManager.getCooldowns().hasCooldown(player, getName())) {
-    return; 
-}
-    championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
+championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
 
     // Bat spawn logic
     final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
