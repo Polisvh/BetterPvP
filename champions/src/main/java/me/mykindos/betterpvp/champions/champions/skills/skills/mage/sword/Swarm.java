@@ -85,7 +85,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         return SkillType.SWORD;
     }
 
-    @Override
     public double getCooldown(int level) {
         return cooldown - ((level - 1) * cooldownReductionPerLevel);
     }
