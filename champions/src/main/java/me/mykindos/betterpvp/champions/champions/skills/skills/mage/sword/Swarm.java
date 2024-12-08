@@ -274,7 +274,7 @@ private void spawnBats(Player player, int level) {
 
 double cooldownTime = getCooldown(level);
 
-if (championsManager.getCooldowns().isOnCooldown(player, getName())) {
+if (championsManager.getCooldowns().hasCooldown(player, getName())) {
     return; 
 }
     championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
