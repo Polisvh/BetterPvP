@@ -107,6 +107,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
             Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
             if (!gamer.isHoldingRightClick()) {
                 iterator.remove();
+                removeLeash(player);
                 continue;
             }
 
