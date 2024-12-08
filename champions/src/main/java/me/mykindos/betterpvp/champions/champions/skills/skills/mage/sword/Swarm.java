@@ -10,7 +10,6 @@ import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
 import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.EnergyChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
-import me.mykindos.betterpvp.core.client.gamer.Gamer;
 import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
 import me.mykindos.betterpvp.core.components.champions.Role;
 import me.mykindos.betterpvp.core.components.champions.SkillType;
@@ -23,7 +22,6 @@ import me.mykindos.betterpvp.core.utilities.UtilTime;
 import me.mykindos.betterpvp.core.utilities.UtilVelocity;
 import me.mykindos.betterpvp.core.utilities.events.EntityProperty;
 import me.mykindos.betterpvp.core.utilities.math.VelocityData;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Bat;
@@ -40,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.WeakHashMap;
 
 @Singleton
@@ -51,8 +48,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     private final WeakHashMap<Player, ArrayList<BatData>> batData = new WeakHashMap<>();
 
     private double batLifespan;
-
     private double batDamage;
+    private double cooldownReductionPerLevel;
 
     @Inject
     public Swarm(Champions champions, ChampionsManager championsManager) {
@@ -86,6 +83,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     @Override
     public SkillType getType() {
         return SkillType.SWORD;
+    }
+
+    @Override
+    public double getCooldown(int level) {
+        return cooldown - ((level - 1) * cooldownReductionPerLevel);
     }
 
     @Override
@@ -186,42 +188,40 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
 
-    
 
 
 
- @Override
+
+    @Override
     public void activate(Player player, int level) {
+        // Cooldown check
+        long currentTime = System.currentTimeMillis();
+        if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
+            return;
+        }
+
+        // Set cooldown time
+        long cooldownTime = (long) (getCooldown(level) * 1000);
+        batCD.put(player, currentTime + cooldownTime);
+
+        // Spawn bats immediately
         final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
         final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
 
-        // Spawn 32 bats using a BukkitRunnable for smooth progression
         final int batCount = 32; // Total number of bats to spawn
-        new BukkitRunnable() {
-            int spawned = 0; // Counter for bats spawned
+        for (int i = 0; i < batCount; i++) {
+            // Spawn the bat at the player's current eye location
+            Bat bat = player.getWorld().spawn(spawnLocation, Bat.class);
+            bat.setHealth(1); // Set health to 1
+            bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
+            bat.setVelocity(direction.clone().multiply(0.5)); // Set initial velocity
 
-            @Override
-            public void run() {
-                if (spawned >= batCount) {
-                    this.cancel(); // Stop when all bats are spawned
-                    return;
-                }
-
-                // Spawn the bat at the player's current eye location
-                Bat bat = player.getWorld().spawn(spawnLocation, Bat.class);
-                bat.setHealth(1); // Set health to 1
-                bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
-                bat.setVelocity(direction.clone().multiply(0.5)); // Set initial velocity
-
-                // Add to tracking data (if required for later handling)
-                if (!batData.containsKey(player)) {
-                    batData.put(player, new ArrayList<>());
-                }
-                batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
-
-                spawned++; // Increment the counter
+            // Add to tracking data
+            if (!batData.containsKey(player)) {
+                batData.put(player, new ArrayList<>());
             }
-        }.runTaskTimer(champions, 0, 2); // Run every 2 ticks for smoother bat spawning
+            batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
+        }
     }
 
 
@@ -230,12 +230,15 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
 
-    
+
+
 
     @Override
     public void loadSkillConfig() {
         batLifespan = getConfig("batLifespan", 2.0, Double.class);
         batDamage = getConfig("batDamage", 1.0, Double.class);
+        cooldown = getConfig("cooldown", 16.0, Double.class);
+        cooldownReductionPerLevel = getConfig("cooldownReductionPerLevel", 1.0, Double.class);
     }
 
     @Override
