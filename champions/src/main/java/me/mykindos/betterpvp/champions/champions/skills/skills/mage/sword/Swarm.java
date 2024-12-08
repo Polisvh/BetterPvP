@@ -111,7 +111,42 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
 
+        @Override
+    public void activate(Player player, int level) {
 
+        long currentTime = System.currentTimeMillis();
+        if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
+            return;
+        }
+        long cooldownTime = (long) (getCooldown(level) * 1000);
+        batCD.put(player, currentTime + cooldownTime);
+
+        // Spawn bats immediately
+        final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
+        final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
+
+        final int batCount = 32; // Total number of bats to spawn
+        for (int i = 0; i < batCount; i++) {
+            // Spawn the bat at the player's current eye location
+            Bat bat = player.getWorld().spawn(spawnLocation, Bat.class);
+            bat.setHealth(1); // Set health to 1
+            bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
+            bat.setVelocity(direction.clone().multiply(0.5)); // Set initial velocity
+
+            // Add to tracking data
+            if (!batData.containsKey(player)) {
+                batData.put(player, new ArrayList<>());
+            }
+            batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
+        }
+    }
+
+
+
+
+
+
+    
 
 
     @UpdateEvent(delay = 100)
@@ -263,51 +298,6 @@ private void stopPulling(Player player) {
             }
         }
     }
-
-
-
-
-
-
-
-
-    @Override
-    public void activate(Player player, int level) {
-
-        long currentTime = System.currentTimeMillis();
-        if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
-            return;
-        }
-        long cooldownTime = (long) (getCooldown(level) * 1000);
-        batCD.put(player, currentTime + cooldownTime);
-
-        // Spawn bats immediately
-        final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
-        final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
-
-        final int batCount = 32; // Total number of bats to spawn
-        for (int i = 0; i < batCount; i++) {
-            // Spawn the bat at the player's current eye location
-            Bat bat = player.getWorld().spawn(spawnLocation, Bat.class);
-            bat.setHealth(1); // Set health to 1
-            bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
-            bat.setVelocity(direction.clone().multiply(0.5)); // Set initial velocity
-
-            // Add to tracking data
-            if (!batData.containsKey(player)) {
-                batData.put(player, new ArrayList<>());
-            }
-            batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
-        }
-    }
-
-
-
-
-
-
-
-
 
 
     @Override
