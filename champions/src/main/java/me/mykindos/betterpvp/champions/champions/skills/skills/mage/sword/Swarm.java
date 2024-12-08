@@ -159,7 +159,7 @@ private void leashPlayerToBat(Player player, Bat bat) {
 
 private void removeVelocityAndLeash(Player player) {
     // Reset the player's velocity to zero (stop pulling)
-    player.setVelocity(Vector.ZERO);
+    player.setVelocity(new Vector(0, 0, 0));
 
     // Remove the leash if it's currently set
     for (BatData batData : batData.get(player)) {
