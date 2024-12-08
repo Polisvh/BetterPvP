@@ -8,7 +8,6 @@ import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
 import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
-import me.mykindos.betterpvp.champions.champions.skills.types.CooldownSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.EnergyChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
 import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
@@ -20,8 +19,6 @@ import me.mykindos.betterpvp.core.listener.BPvPListener;
 import me.mykindos.betterpvp.core.utilities.UtilDamage;
 import me.mykindos.betterpvp.core.utilities.UtilEntity;
 import me.mykindos.betterpvp.core.utilities.UtilTime;
-import me.mykindos.betterpvp.core.utilities.*;
-import me.mykindos.betterpvp.core.utilities.UtilMessage;
 import me.mykindos.betterpvp.core.utilities.UtilVelocity;
 import me.mykindos.betterpvp.core.utilities.events.EntityProperty;
 import me.mykindos.betterpvp.core.utilities.math.VelocityData;
@@ -34,7 +31,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -42,7 +38,6 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
-import java.util.UUID;
 
 @Singleton
 @BPvPListener
@@ -97,7 +92,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         return cooldown - ((level - 1) * cooldownReductionPerLevel);
     }
 
-    
+
     public boolean hitPlayer(Location loc, LivingEntity player) {
         if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
                 .add(0, -player.getLocation().getY(), 0).toVector()).length() < 0.8D) {
@@ -109,6 +104,84 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         }
         return false;
     }
+
+
+
+
+
+
+
+
+
+
+    @UpdateEvent(delay = 100)
+    public void checkChanneling() {
+        for (Player player : batData.keySet()) {
+            if (player == null || !isHolding(player)) {
+                continue; // Skip if the player is not holding right-click (channeling) or is null
+            }
+
+            // Ensure the player has bats spawned
+            ArrayList<BatData> bats = batData.get(player);
+            if (bats == null || bats.isEmpty()) {
+                continue; // No bats to interact with
+            }
+
+            // Find the closest bat
+            Bat closestBat = findClosestBat(player, bats);
+            if (closestBat != null) {
+                // Calculate the direction towards the closest bat
+                Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+
+                // Apply the leash pull (player towards bat)
+                applyLeashPull(player, directionToBat);
+
+                // Apply leash holder logic (attach bat to player)
+                leashBatToPlayer(closestBat, player);
+            }
+        }
+    }
+
+    private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
+        Bat closestBat = null;
+        double closestDistance = Double.MAX_VALUE;
+
+        for (BatData batData : bats) {
+            Bat bat = batData.getBat();
+            if (bat != null && !bat.isDead()) {
+                double distance = player.getLocation().distance(bat.getLocation());
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestBat = bat;
+                }
+            }
+        }
+        return closestBat;
+    }
+
+    private void applyLeashPull(Player player, Vector directionToBat) {
+        // Calculate the pulling velocity towards the closest bat
+        double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
+        Vector velocity = directionToBat.multiply(pullStrength);
+
+        // Apply the calculated velocity to the player to simulate the leash effect
+        player.setVelocity(velocity);
+    }
+
+    private void leashBatToPlayer(Bat closestBat, Player player) {
+        // Leash the bat to the player if it's not already leashed
+        if (closestBat.getLeashHolder() == null) {
+            closestBat.setLeashHolder(player);  // Set the player as the leash holder
+        }
+    }
+
+
+
+
+
+
+
+
 
 
 
@@ -196,7 +269,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     @Override
     public void activate(Player player, int level) {
-        
+
         long currentTime = System.currentTimeMillis();
         if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
             return;
