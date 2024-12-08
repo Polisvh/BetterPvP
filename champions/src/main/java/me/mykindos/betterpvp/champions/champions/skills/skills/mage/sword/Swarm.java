@@ -115,65 +115,66 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
     @UpdateEvent(delay = 100)
-    public void checkChanneling() {
-        for (Player player : batData.keySet()) {
-            if (player == null || !isHolding(player)) {
-                continue; // Skip if the player is not holding right-click (channeling) or is null
-            }
+public void checkChanneling() {
+    for (Player player : batData.keySet()) {
+        if (player == null || !isHolding(player)) {
+            continue; // Skip if the player is not holding right-click (channeling) or is null
+        }
 
-            // Ensure the player has bats spawned
-            ArrayList<BatData> bats = batData.get(player);
-            if (bats == null || bats.isEmpty()) {
-                continue; // No bats to interact with
-            }
+        // Ensure the player has bats spawned
+        ArrayList<BatData> bats = batData.get(player);
+        if (bats == null || bats.isEmpty()) {
+            continue; // No bats to interact with
+        }
 
-            // Find the closest bat
-            Bat closestBat = findClosestBat(player, bats);
-            if (closestBat != null) {
-                // Calculate the direction towards the closest bat
-                Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+        // Find the closest bat
+        Bat closestBat = findClosestBat(player, bats);
+        if (closestBat != null) {
+            // Calculate the direction towards the closest bat
+            Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
 
-                // Apply the leash pull (player towards bat)
-                applyLeashPull(player, directionToBat);
+            // Apply the leash pull (player towards bat)
+            applyLeashPull(player, directionToBat);
 
-                // Apply leash holder logic (attach bat to player)
-                leashBatToPlayer(closestBat, player);
+            // Apply leash holder logic (attach bat to player)
+            leashBatToPlayer(closestBat, player);
+        }
+    }
+}
+
+private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
+    Bat closestBat = null;
+    double closestDistance = Double.MAX_VALUE;
+
+    for (BatData batData : bats) {
+        Bat bat = batData.getBat();
+        if (bat != null && !bat.isDead()) {
+            double distance = player.getLocation().distance(bat.getLocation());
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestBat = bat;
             }
         }
     }
+    return closestBat;
+}
 
-    private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
-        Bat closestBat = null;
-        double closestDistance = Double.MAX_VALUE;
+private void applyLeashPull(Player player, Vector directionToBat) {
+    // Calculate the pulling velocity towards the closest bat
+    double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
+    Vector velocity = directionToBat.multiply(pullStrength);
 
-        for (BatData batData : bats) {
-            Bat bat = batData.getBat();
-            if (bat != null && !bat.isDead()) {
-                double distance = player.getLocation().distance(bat.getLocation());
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestBat = bat;
-                }
-            }
-        }
-        return closestBat;
+    // Apply the calculated velocity to the player to simulate the leash effect
+    player.setVelocity(velocity);
+}
+
+private void leashBatToPlayer(Bat closestBat, Player player) {
+    // Only leash the bat if it is not already leashed to the player
+    if (closestBat.getLeashHolder() != player) {
+        closestBat.setLeashHolder(player);  // Set the player as the leash holder
     }
+}
 
-    private void applyLeashPull(Player player, Vector directionToBat) {
-        // Calculate the pulling velocity towards the closest bat
-        double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
-        Vector velocity = directionToBat.multiply(pullStrength);
-
-        // Apply the calculated velocity to the player to simulate the leash effect
-        player.setVelocity(velocity);
-    }
-
-    private void leashBatToPlayer(Bat closestBat, Player player) {
-        // Leash the bat to the player if it's not already leashed
-        if (closestBat.getLeashHolder() == null) {
-            closestBat.setLeashHolder(player);  // Set the player as the leash holder
-        }
-    }
 
 
 
