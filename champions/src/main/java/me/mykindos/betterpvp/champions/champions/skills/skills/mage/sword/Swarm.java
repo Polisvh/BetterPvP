@@ -116,10 +116,10 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 iterator.remove();
             } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
                 iterator.remove();
-                removeVelocityAndLeash(player);
+                removeLeash(player);
             } else if (!isHolding(player)) {
                 iterator.remove();
-                removeVelocityAndLeash(player);
+                removeLeash(player);
             } else {
                 Bat closestBat = findClosestBat(player);
                 if (closestBat != null) {
@@ -163,15 +163,13 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_BAT_AMBIENT, 0.5F, 1.0F);
     }
 
-    private void removeVelocityAndLeash(Player player) {
-        // Reset the player's velocity to zero (stop pulling)
-        player.setVelocity(new Vector(0, 0, 0));
-
-        // Remove the leash if it's currently set
+    private void removeLeash(Player player) {
+        
         for (BatData batData : batData.get(player)) {
             Bat bat = batData.getBat();
             if (bat != null && !bat.isDead()) {
-                bat.setLeashHolder(null); // Remove the leash from the bat
+                bat.setLeashHolder(null);
+         
             }
         }
     }
