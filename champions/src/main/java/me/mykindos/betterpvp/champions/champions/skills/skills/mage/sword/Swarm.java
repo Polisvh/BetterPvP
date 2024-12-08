@@ -199,14 +199,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
             return;
         }
-        if (championsManager.getCooldowns().hasCooldown(cur, getName())) {
-                UtilMessage.simpleMessage(cur, "Cooldown", "You cannot use <alt>%s</alt> for <alt>%s</alt> seconds.",
-                        getName(),
-                        Math.max(0, championsManager.getCooldowns().getAbilityRecharge(cur, getName()).getRemaining()));
-                iterator.remove();
-                continue;
-            }
-        // Set cooldown time
         long cooldownTime = (long) (getCooldown(level) * 1000);
         batCD.put(player, currentTime + cooldownTime);
 
