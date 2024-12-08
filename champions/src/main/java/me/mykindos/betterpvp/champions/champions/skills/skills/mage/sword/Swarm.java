@@ -7,6 +7,7 @@ import lombok.Data;
 import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
+import me.mykindos.betterpvp.champions.champions.skills.types.CooldownSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.EnergyChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
@@ -38,7 +39,7 @@ import java.util.Map.Entry;
 
 @Singleton
 @BPvPListener
-public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelSkill, Listener {
+public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill, EnergyChannelSkill, Listener {
 
     private final WeakHashMap<Player, Long> batCD = new WeakHashMap<>();
     private final WeakHashMap<Player, ArrayList<BatData>> batData = new WeakHashMap<>();
