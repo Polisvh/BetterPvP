@@ -22,6 +22,7 @@ import me.mykindos.betterpvp.core.utilities.UtilTime;
 import me.mykindos.betterpvp.core.utilities.UtilVelocity;
 import me.mykindos.betterpvp.core.utilities.events.EntityProperty;
 import me.mykindos.betterpvp.core.utilities.math.VelocityData;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Bat;
@@ -33,11 +34,8 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.WeakHashMap;
 
 @Singleton
 @BPvPListener
@@ -89,7 +87,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
     public double getCooldown(int level) {
-        return cooldown - ((level - 1) * cooldownReductionPerLevel);
+        return cooldown - (level - 1) * cooldownDecreasePerLevel;
     }
 
 
@@ -150,47 +148,64 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
     @UpdateEvent(delay = 100)
-public void checkChanneling() {
-    for (Player player : batData.keySet()) {
-        if (player == null || !isHolding(player) || !championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
+    public void checkChanneling() {
+        final Iterator<UUID> iterator = active.iterator();
+        while (iterator.hasNext()) {
+            Player player = Bukkit.getPlayer(iterator.next());
+            if (player == null) {
+                iterator.remove();
+                continue;
+            }
+
             stopPulling(player);
-            continue; // Skip if the player is not holding right-click (channeling) or is null
-        }
+            continue;
 
-        // Ensure the player has bats spawned
-        ArrayList<BatData> bats = batData.get(player);
-        if (bats == null || bats.isEmpty()) {
-            continue; // No bats to interact with
-        }
 
-        // Find the closest bat
-        Bat closestBat = findClosestBat(player, bats);
-        if (closestBat != null) {
-            // Calculate the direction towards the closest bat
-            Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+            // Ensure the player has bats spawned
+            ArrayList<BatData> bats = batData.get(player);
+            if (bats == null || bats.isEmpty()) {
+                continue;
+            }
 
-            // Apply the leash pull (player towards bat)
-            applyLeashPull(player, directionToBat);
+            // Find the closest bat
+            Bat closestBat = findClosestBat(player, bats);
+            int level = getLevel(player);
+            if (level <= 0) {
+                if (closestBat != null) {
+                    stopPulling(player);
+                    iterator.remove();
+                } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
+                    stopPulling(player);
+                    iterator.remove();
+                } else if (!isHolding(player)) {
+                    stopPulling(player);
+                    iterator.remove();
+                } else {
 
-            // Apply leash holder logic (attach bat to player)
-            leashBatToPlayer(closestBat, player);
+                    Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+
+                    applyLeashPull(player, directionToBat);
+
+                    leashBatToPlayer(closestBat, player);
+
+                }
+            }
         }
     }
-}
     
 private void applyLeashPull(Player player, Vector directionToBat) {
-    // Calculate the pulling velocity towards the closest bat
+
     double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
     Vector velocity = directionToBat.multiply(pullStrength);
-
-    // Apply the calculated velocity to the player to simulate the leash effect
     player.setVelocity(velocity);
+
 }
     
 private void leashBatToPlayer(Bat closestBat, Player player) {
-    // Only leash the bat if it is not already leashed to the player
+
     if (closestBat.getLeashHolder() != player) {
-        closestBat.setLeashHolder(player);  // Set the player as the leash holder
+        closestBat.setLeashHolder(player);
+
     }
 }
 
@@ -210,8 +225,8 @@ private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
     }
     return closestBat;
 }
+
 private void stopPulling(Player player) {
-    // Stop the player's movement when right-click is released
     player.setVelocity(new Vector(0, 0, 0)); // No movement
 }
 
@@ -302,7 +317,7 @@ private void stopPulling(Player player) {
 
     @Override
     public void loadSkillConfig() {
-        batLifespan = getConfig("batLifespan", 2.0, Double.class);
+        batLifespan = getConfig("batLifespan", 4.0, Double.class);
         batDamage = getConfig("batDamage", 1.0, Double.class);
         cooldown = getConfig("cooldown", 16.0, Double.class);
         cooldownReductionPerLevel = getConfig("cooldownReductionPerLevel", 1.0, Double.class);
