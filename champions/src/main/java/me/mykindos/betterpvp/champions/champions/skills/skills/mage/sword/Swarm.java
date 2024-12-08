@@ -86,6 +86,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
     public float getEnergy(int level) {
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
+    @Override
     public double getCooldowns(int level) {
         return cooldown - (level - 1) * cooldownDecreasePerLevel;
     }
@@ -264,19 +265,18 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
     @Override
     public void activate(Player player, int level) {
     active.add(player.getUniqueId());
-    spawnBats(player);
+    spawnBats(player, getLevel(player));
     }
 
 
 
 private void spawnBats(Player player, int level) {
-    // Retrieve the cooldown time from ChampionsManager
-    double cooldownTime = getCooldown(level);
 
-    // Check if the cooldown is still active for the player
-    if (championsManager.getCooldowns().isOnCooldown(player, getName())) {
-        return; // Don't spawn bats if cooldown is still active
-    }
+double cooldownTime = getCooldown(level);
+
+if (championsManager.getCooldowns().isOnCooldown(player, getName())) {
+    return; 
+}
 
     // Apply cooldown after spawning bats
     championsManager.getCooldowns().use(player, getName(), cooldownTime, true, true, true, () -> true);
