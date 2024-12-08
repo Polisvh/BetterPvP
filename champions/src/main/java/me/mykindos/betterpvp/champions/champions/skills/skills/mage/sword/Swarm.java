@@ -85,16 +85,15 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
         return SkillType.SWORD;
     }
 
-    public double getCooldown(int level) {
-        return cooldown - ((level - 1) * cooldownReductionPerLevel);
-    }
-
     @Override
     public float getEnergy(int level) {
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
+    public double getCooldown(int level) {
+        return cooldown - ((level - 1) * cooldownReductionPerLevel);
+    }
 
-
+    
     public boolean hitPlayer(Location loc, LivingEntity player) {
         if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
                 .add(0, -player.getLocation().getY(), 0).toVector()).length() < 0.8D) {
