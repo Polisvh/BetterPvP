@@ -116,10 +116,10 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 iterator.remove();
             } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
                 iterator.remove();
-                removeVelocityAndLeash();
+                removeVelocityAndLeash(player);
             } else if (!isHolding(player)) {
                 iterator.remove();
-                removeVelocityAndLeash();
+                removeVelocityAndLeash(player);
             } else {
                 Bat closestBat = findClosestBat(player);
                 if (closestBat != null) {
