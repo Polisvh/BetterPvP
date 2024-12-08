@@ -97,40 +97,58 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
 
 
     @UpdateEvent
-    public void channeling() {
-        final Iterator<UUID> iterator = active.iterator();
-        while (iterator.hasNext()) {
-            Player player = Bukkit.getPlayer(iterator.next());
-            if (player == null) {
-                iterator.remove();
-                continue;
-            }
+public void channeling() {
+    final Iterator<UUID> iterator = active.iterator();
+    while (iterator.hasNext()) {
+        Player player = Bukkit.getPlayer(iterator.next());
+        if (player == null) {
+            iterator.remove();
+            continue;
+        }
 
-            Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
-            if (!gamer.isHoldingRightClick()) {
-                iterator.remove();
-                removeLeash(player);
-                continue;
-            }
+        Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
+        boolean hasActiveBats = batData.containsKey(player) && batData.get(player).stream().anyMatch(b -> b.getBat() != null && !b.getBat().isDead());
 
-            int level = getLevel(player);
-            if (level <= 0) {
-                iterator.remove();
-            } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
-                iterator.remove();
-                removeLeash(player);
-            } else if (!isHolding(player)) {
-                iterator.remove();
-                removeLeash(player);
+        // Check if the player has stopped holding right click
+        if (!gamer.isHoldingRightClick()) {
+            if (hasActiveBats) {
+                // Don't remove the player from `active` yet; let them re-activate later
+                continue;
             } else {
-                Bat closestBat = findClosestBat(player);
-                if (closestBat != null) {
-                    pullPlayerTowardsBat(player, closestBat);
-                    leashPlayerToBat(player, closestBat);
-                }
+                iterator.remove();
+                removeLeash(player);
+                continue;
             }
         }
+
+        int level = getLevel(player);
+        if (level <= 0 || !hasActiveBats) {
+            iterator.remove();
+            removeLeash(player);
+            continue;
+        }
+
+        // Check if the player has enough energy
+        if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
+            iterator.remove();
+            removeLeash(player);
+            continue;
+        }
+
+        // Ensure the player is holding the appropriate item
+        if (!isHolding(player)) {
+            iterator.remove();
+            removeLeash(player);
+            continue;
+        }
+
+        Bat closestBat = findClosestBat(player);
+        if (closestBat != null) {
+            pullPlayerTowardsBat(player, closestBat);
+            leashPlayerToBat(player, closestBat);
+        }
     }
+}
     private Bat findClosestBat(Player player) {
         double closestDistance = Double.MAX_VALUE;
         Bat closestBat = null;
