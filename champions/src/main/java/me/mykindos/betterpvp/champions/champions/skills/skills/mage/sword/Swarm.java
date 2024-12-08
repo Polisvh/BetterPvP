@@ -8,6 +8,7 @@ import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
 import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
+import me.mykindos.betterpvp.champions.champions.skills.types.CooldownSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.EnergyChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
 import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
@@ -19,6 +20,7 @@ import me.mykindos.betterpvp.core.listener.BPvPListener;
 import me.mykindos.betterpvp.core.utilities.UtilDamage;
 import me.mykindos.betterpvp.core.utilities.UtilEntity;
 import me.mykindos.betterpvp.core.utilities.UtilTime;
+import me.mykindos.betterpvp.core.utilities.*;
 import me.mykindos.betterpvp.core.utilities.UtilVelocity;
 import me.mykindos.betterpvp.core.utilities.events.EntityProperty;
 import me.mykindos.betterpvp.core.utilities.math.VelocityData;
@@ -192,6 +194,11 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
     @Override
     public void activate(Player player, int level) {
+        
+        long currentTime = System.currentTimeMillis();
+        if (batCD.containsKey(player) && currentTime < batCD.get(player)) {
+            return;
+        }
         if (championsManager.getCooldowns().hasCooldown(cur, getName())) {
                 UtilMessage.simpleMessage(cur, "Cooldown", "You cannot use <alt>%s</alt> for <alt>%s</alt> seconds.",
                         getName(),
@@ -199,7 +206,6 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
                 iterator.remove();
                 continue;
             }
-
         // Set cooldown time
         long cooldownTime = (long) (getCooldown(level) * 1000);
         batCD.put(player, currentTime + cooldownTime);
