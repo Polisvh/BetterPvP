@@ -90,33 +90,8 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     }
 
 
-    @UpdateEvent
-    public void useEnergy() {
-        final Iterator<UUID> iterator = active.iterator();
-        while (iterator.hasNext()) {
-            Player player = Bukkit.getPlayer(iterator.next());
-            if (player == null) {
-                iterator.remove();
-                continue;
-            }
 
-            int level = getLevel(player);
-
-            Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
-            if (!gamer.isHoldingRightClick()
-                    || !championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)
-                    || (level <= 0)
-                    || !isHolding(player)) {
-
-                iterator.remove();
-            }
-            else {
-                player.getWorld().playEffect(player.getLocation(), Effect.STEP_SOUND, 20);
-            }
-
-        }
-
-    }
+    
 
 
     @UpdateEvent
