@@ -117,7 +117,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     @UpdateEvent(delay = 100)
 public void checkChanneling() {
     for (Player player : batData.keySet()) {
-        if (player == null || !isHolding(player) || !championsManager.getEnergy().use(cur, getName(), getEnergy(level) / 20, true) {) {
+        if (player == null || !isHolding(player) || !championsManager.getEnergy().use(cur, getName(), getEnergy(level) / 20, true)) {
             stopPulling(player);
             continue; // Skip if the player is not holding right-click (channeling) or is null
         }
@@ -142,7 +142,8 @@ public void checkChanneling() {
         }
     }
 }
-    private void applyLeashPull(Player player, Vector directionToBat) {
+    
+private void applyLeashPull(Player player, Vector directionToBat) {
     // Calculate the pulling velocity towards the closest bat
     double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
     Vector velocity = directionToBat.multiply(pullStrength);
@@ -150,7 +151,7 @@ public void checkChanneling() {
     // Apply the calculated velocity to the player to simulate the leash effect
     player.setVelocity(velocity);
 }
-
+    
 private void leashBatToPlayer(Bat closestBat, Player player) {
     // Only leash the bat if it is not already leashed to the player
     if (closestBat.getLeashHolder() != player) {
@@ -174,23 +175,6 @@ private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
     }
     return closestBat;
 }
-
-private void applyLeashPull(Player player, Vector directionToBat) {
-    // Calculate the pulling velocity towards the closest bat
-    double pullStrength = 0.5; // Adjust the pull strength (e.g., 0.5 for a moderate pull)
-    Vector velocity = directionToBat.multiply(pullStrength);
-
-    // Apply the calculated velocity to the player to simulate the leash effect
-    player.setVelocity(velocity);
-}
-
-private void leashBatToPlayer(Bat closestBat, Player player) {
-    // Only leash the bat if it is not already leashed to the player
-    if (closestBat.getLeashHolder() != player) {
-        closestBat.setLeashHolder(player);  // Set the player as the leash holder
-    }
-}
-
 private void stopPulling(Player player) {
     // Stop the player's movement when right-click is released
     player.setVelocity(new Vector(0, 0, 0)); // No movement
