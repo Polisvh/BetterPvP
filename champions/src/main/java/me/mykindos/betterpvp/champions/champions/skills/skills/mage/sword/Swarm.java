@@ -89,92 +89,46 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     }
 
 
-    public boolean hitPlayer(Location loc, LivingEntity player) {
-        if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
-                .add(0, -player.getLocation().getY(), 0).toVector()).length() < 0.8D) {
-            return true;
-        }
-        if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
-                .add(0, -player.getLocation().getY(), 0).toVector()).length() < 1.2) {
-            return (loc.getY() > player.getLocation().getY()) && (loc.getY() < player.getEyeLocation().getY());
-        }
-        return false;
-    }
-
-
-
-
-
-    @UpdateEvent
-    public void checkChannelling() {
-
+    
+@UpdateEvent
+    public void channeling() {
         final Iterator<UUID> iterator = active.iterator();
-        Player player = Bukkit.getPlayer(iterator.next());
         while (iterator.hasNext()) {
+            Player player = Bukkit.getPlayer(iterator.next());
             if (player == null) {
                 iterator.remove();
                 continue;
             }
+
             Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
             if (!gamer.isHoldingRightClick()) {
+                removeVelocityAndLeash(player);
                 iterator.remove();
-                stopPulling(player);
                 continue;
             }
 
-
-            ArrayList<BatData> bats = batData.get(player);
-            if (bats == null || bats.isEmpty()) {
-                continue;
-            }
-
-            // Find the closest bat
-            Bat closestBat = findClosestBat(player, bats);
             int level = getLevel(player);
             if (level <= 0) {
-                if (closestBat != null) {
-                    stopPulling(player);
-                    iterator.remove();
-                } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
-                    stopPulling(player);
-                    iterator.remove();
-                } else if (!isHolding(player)) {
-                    stopPulling(player);
-                    iterator.remove();
-                } else {
-
-                    Vector directionToBat = closestBat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
-
-                    applyLeashPull(player, directionToBat);
-
-                    leashBatToPlayer(closestBat, player);
-
-                }
+                iterator.remove();
+            } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
+                iterator.remove();
+            } else if (!isHolding(player)) {
+                iterator.remove();
+            } else {
+            Bat closestBat = findClosestBat(player);
+            if (closestBat != null) {
+                pullPlayerTowardsBat(player, closestBat);
+                leashPlayerToBat(player, closestBat);
             }
         }
     }
-    
-private void applyLeashPull(Player player, Vector directionToBat) {
-
-    double pullStrength = 0.5;
-    Vector velocity = directionToBat.multiply(pullStrength);
-    player.setVelocity(velocity);
-
 }
-    
-private void leashBatToPlayer(Bat closestBat, Player player) {
-
-    if (closestBat.getLeashHolder() != player) {
-        closestBat.setLeashHolder(player);
-
-    }
-}
-
-private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
-    Bat closestBat = null;
+private Bat findClosestBat(Player player) {
     double closestDistance = Double.MAX_VALUE;
+    Bat closestBat = null;
 
-    for (BatData batData : bats) {
+    // Iterate over all bats spawned by the player
+    for (BatData batData : batData.get(player)) {
         Bat bat = batData.getBat();
         if (bat != null && !bat.isDead()) {
             double distance = player.getLocation().distance(bat.getLocation());
@@ -186,16 +140,50 @@ private Bat findClosestBat(Player player, ArrayList<BatData> bats) {
     }
     return closestBat;
 }
+private void pullPlayerTowardsBat(Player player, Bat bat) {
+    // Calculate the direction towards the bat
+    Vector directionToBat = bat.getLocation().toVector().subtract(player.getLocation().toVector()).normalize();
+    
+    // Apply the pulling effect to the player (you can modify the speed here)
+    player.setVelocity(directionToBat.multiply(0.5)); // Adjust the pulling strength
+}
 
-private void stopPulling(Player player) {
-    player.setVelocity(new Vector(0, 0, 0));// No movement
+private void leashPlayerToBat(Player player, Bat bat) {
+    // Set the bat as the leash holder for the player
+    // Bats can hold a leash, so we can set the player as the holder of the leash
+    bat.setLeashHolder(player);
+
+    // Optionally, you can play a sound or visual effect here to indicate the leash effect
+    bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_BAT_AMBIENT, 0.5F, 1.0F);
+}
+
+private void removeVelocityAndLeash(Player player) {
+    // Reset the player's velocity to zero (stop pulling)
+    player.setVelocity(Vector.ZERO);
+
+    // Remove the leash if it's currently set
+    for (BatData batData : batData.get(player)) {
+        Bat bat = batData.getBat();
+        if (bat != null && !bat.isDead()) {
+            bat.setLeashHolder(null); // Remove the leash from the bat
+        }
+    }
 }
 
 
 
-
-
-
+    
+    public boolean hitPlayer(Location loc, LivingEntity player) {
+        if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
+                .add(0, -player.getLocation().getY(), 0).toVector()).length() < 0.8D) {
+            return true;
+        }
+        if (loc.add(0, -loc.getY(), 0).toVector().subtract(player.getLocation()
+                .add(0, -player.getLocation().getY(), 0).toVector()).length() < 1.2) {
+            return (loc.getY() > player.getLocation().getY()) && (loc.getY() < player.getEyeLocation().getY());
+        }
+        return false;
+    }
     @UpdateEvent(delay = 100)
     public void batHit() {
         for (Player player : batData.keySet()) {
@@ -240,8 +228,6 @@ private void stopPulling(Player player) {
             }
         }
     }
-
-
     @UpdateEvent(delay = 500)
     public void destroyBats() {
 
@@ -269,9 +255,7 @@ private void stopPulling(Player player) {
             }
         }
     }
-
-
-
+    
     @Override
     public void activate(Player player, int level) {
         long currentTime = System.currentTimeMillis();
