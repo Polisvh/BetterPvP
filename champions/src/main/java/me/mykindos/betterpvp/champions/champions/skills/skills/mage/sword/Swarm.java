@@ -96,7 +96,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
     
 
 
-    @UpdateEvent
+@UpdateEvent
 public void channeling() {
     final Iterator<UUID> iterator = active.iterator();
     while (iterator.hasNext()) {
@@ -111,14 +111,10 @@ public void channeling() {
 
         // Check if the player has stopped holding right click
         if (!gamer.isHoldingRightClick()) {
-            if (hasActiveBats) {
-                // Don't remove the player from `active` yet; let them re-activate later
-                continue;
-            } else {
-                iterator.remove();
-                removeLeash(player);
-                continue;
-            }
+            // Remove the player from `active` and remove the leash
+            iterator.remove();
+            removeLeash(player);
+            continue;
         }
 
         int level = getLevel(player);
@@ -149,6 +145,7 @@ public void channeling() {
         }
     }
 }
+
     private Bat findClosestBat(Player player) {
         double closestDistance = Double.MAX_VALUE;
         Bat closestBat = null;
@@ -282,9 +279,12 @@ public void channeling() {
 
 @Override
 public void activate(Player player, int level) {
-active.add(player.getUniqueId());
-spawnBats(player, getLevel(player));
+    active.add(player.getUniqueId());
+    
+    // Schedule the bat spawning with a 10-tick delay
+    Bukkit.getScheduler().runTaskLater(champions, () -> spawnBats(player, level), 10L); // Delay of 10 ticks
 }
+
 
 
 
