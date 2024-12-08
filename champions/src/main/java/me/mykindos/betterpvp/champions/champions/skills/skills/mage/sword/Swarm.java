@@ -117,7 +117,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     @UpdateEvent(delay = 100)
 public void checkChanneling() {
     for (Player player : batData.keySet()) {
-        if (player == null || !isHolding(player) || !championsManager.getEnergy().use(cur, getName(), getEnergy(level) / 20, true)) {
+        if (player == null || !isHolding(player) || !championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
             stopPulling(player);
             continue; // Skip if the player is not holding right-click (channeling) or is null
         }
