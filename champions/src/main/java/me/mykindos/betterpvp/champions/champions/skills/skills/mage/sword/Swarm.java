@@ -94,7 +94,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     
 
 
-    @UpdateEvent(delay = 500)
+    @UpdateEvent
     public void channeling() {
         final Iterator<UUID> iterator = active.iterator();
         while (iterator.hasNext()) {
@@ -268,7 +268,19 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
 
 
 
-private void spawnBats(Player player) {
+private void spawnBats(Player player, int level) {
+    // Retrieve the cooldown time from ChampionsManager
+    double cooldownTime = getCooldown(level);
+
+    // Check if the cooldown is still active for the player
+    if (championsManager.getCooldowns().isOnCooldown(player, getName())) {
+        return; // Don't spawn bats if cooldown is still active
+    }
+
+    // Apply cooldown after spawning bats
+    championsManager.getCooldowns().use(player, getName(), cooldownTime, true, true, true, () -> true);
+
+    // Bat spawn logic
     final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
     final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
 
@@ -287,6 +299,7 @@ private void spawnBats(Player player) {
         batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
     }
 }
+
 
 @Override
 public void loadSkillConfig() {
