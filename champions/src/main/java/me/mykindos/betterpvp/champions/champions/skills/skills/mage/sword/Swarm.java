@@ -274,8 +274,6 @@ private void spawnBats(Player player, int level) {
 
 double cooldownTime = getCooldown(level);
 
-championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
-
     // Bat spawn logic
     final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
     final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
@@ -293,6 +291,7 @@ championsManager.getCooldowns().use(player, getName(), getCooldown(level), true,
             batData.put(player, new ArrayList<>());
         }
         batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
+        championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
     }
 }
 
