@@ -33,6 +33,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -106,44 +107,40 @@ public class Swarm extends ChannelSkill implements InteractSkill, EnergyChannelS
     }
 
 
-    @UpdateEvent
-    public void checkChannelling() {
+    @Override
+    public void activate(Player player, int level) {
+        final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
+        final Location spawnLocation = player.getEyeLocation().add(direction); // Start near player's eye level
 
-        final Iterator<UUID> iterator = active.iterator();
-        while (iterator.hasNext()) {
-            Player cur = Bukkit.getPlayer(iterator.next());
-            if (cur == null) {
-                iterator.remove();
-                continue;
-            }
+        // Spawn 32 bats using a BukkitRunnable for smooth progression
+        final int batCount = 32; // Total number of bats to spawn
+        new BukkitRunnable() {
+            int spawned = 0; // Counter for bats spawned
 
-            Gamer gamer = championsManager.getClientManager().search().online(cur).getGamer();
-            if (!gamer.isHoldingRightClick()) {
-                iterator.remove();
-                continue;
-            }
-
-            int level = getLevel(cur);
-            if (level <= 0) {
-                iterator.remove();
-            } else if (!championsManager.getEnergy().use(cur, getName(), getEnergy(level) / 20, true)) {
-                iterator.remove();
-            } else if (!isHolding(cur)) {
-                iterator.remove();
-            } else {
-                if (batData.containsKey(cur)) {
-
-                    Bat bat = cur.getWorld().spawn(cur.getLocation().add(0, 0.5, 0), Bat.class);
-                    bat.setHealth(1);
-                    bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
-                    bat.setVelocity(cur.getLocation().getDirection().multiply(2));
-                    batData.get(cur).add(new BatData(bat, System.currentTimeMillis(), cur.getLocation()));
-
+            @Override
+            public void run() {
+                if (spawned >= batCount) {
+                    this.cancel(); // Stop when all bats are spawned
+                    return;
                 }
-            }
-        }
 
+                // Spawn the bat at the player's current eye location
+                Bat bat = player.getWorld().spawn(spawnLocation, Bat.class);
+                bat.setHealth(1); // Set health to 1
+                bat.setMetadata("PlayerSpawned", new FixedMetadataValue(champions, true));
+                bat.setVelocity(direction.clone().multiply(0.5)); // Set initial velocity
+
+                // Add to tracking data (if required for later handling)
+                if (!batData.containsKey(player)) {
+                    batData.put(player, new ArrayList<>());
+                }
+                batData.get(player).add(new BatData(bat, System.currentTimeMillis(), player.getEyeLocation()));
+
+                spawned++; // Increment the counter
+            }
+        }.runTaskTimer(champions, 0, 2); // Run every 2 ticks for smoother bat spawning
     }
+
 
     @UpdateEvent(delay = 100)
     public void batHit() {
