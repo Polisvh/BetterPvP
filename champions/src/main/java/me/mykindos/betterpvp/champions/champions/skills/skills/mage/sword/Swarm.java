@@ -87,7 +87,7 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
         return (float) (energy - ((level - 1) * energyDecreasePerLevel));
     }
     @Override
-    public double getCooldowns(int level) {
+    public double getCooldown(int level) {
         return cooldown - (level - 1) * cooldownDecreasePerLevel;
     }
 
@@ -277,9 +277,7 @@ double cooldownTime = getCooldown(level);
 if (championsManager.getCooldowns().isOnCooldown(player, getName())) {
     return; 
 }
-
-    // Apply cooldown after spawning bats
-    championsManager.getCooldowns().use(player, getName(), cooldownTime, true, true, true, () -> true);
+    championsManager.getCooldowns().use(player, getName(), getCooldown(level), true, true, isCancellable(), this::shouldDisplayActionBar);
 
     // Bat spawn logic
     final Vector direction = player.getLocation().getDirection().normalize().multiply(0.3D);
@@ -325,4 +323,5 @@ private static class BatData {
 }
 
 }
+
 
