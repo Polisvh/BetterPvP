@@ -282,7 +282,7 @@ public void activate(Player player, int level) {
     active.add(player.getUniqueId());
     
     // Schedule the bat spawning with a 10-tick delay
-    Bukkit.getScheduler().runTaskLater(champions, () -> spawnBats(player, level), 10L); // Delay of 10 ticks
+    Bukkit.getScheduler().runTaskLater(champions, () -> spawnBats(player, level), 5L);
 }
 
 
