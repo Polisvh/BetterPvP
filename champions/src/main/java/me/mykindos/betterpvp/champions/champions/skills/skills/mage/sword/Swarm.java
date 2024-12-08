@@ -95,6 +95,20 @@ public class Swarm extends ChannelSkill implements InteractSkill, CooldownSkill,
 
     
 
+@Override
+public void activate(Player player, int level) {
+    active.add(player.getUniqueId());
+
+    // Mark player as waiting for bats
+    championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true); // Preconsume energy for consistency
+    Bukkit.getScheduler().runTaskLater(champions, () -> {
+        spawnBats(player, level);
+        // Ensure the player's state is valid after the delay
+        if (!active.contains(player.getUniqueId())) {
+            active.add(player.getUniqueId());
+        }
+    }, 5L);
+}
 
 @UpdateEvent
 public void channeling() {
@@ -109,6 +123,13 @@ public void channeling() {
         Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
         boolean hasActiveBats = batData.containsKey(player) && batData.get(player).stream().anyMatch(b -> b.getBat() != null && !b.getBat().isDead());
 
+        // Skip "active bats" check if bats are being spawned
+        if (!hasActiveBats && !isPlayerWaitingForBats(player)) {
+            iterator.remove();
+            removeLeash(player);
+            continue;
+        }
+
         // Check if the player has stopped holding right-click
         if (!gamer.isHoldingRightClick()) {
             iterator.remove();
@@ -117,7 +138,7 @@ public void channeling() {
         }
 
         int level = getLevel(player);
-        if (level <= 0 || !hasActiveBats) {
+        if (level <= 0) {
             iterator.remove();
             removeLeash(player);
             continue;
@@ -150,6 +171,11 @@ public void channeling() {
         }
     }
 }
+
+private boolean isPlayerWaitingForBats(Player player) {
+    return !batData.containsKey(player) || batData.get(player).isEmpty();
+}
+
 
     private Bat findClosestBat(Player player) {
         double closestDistance = Double.MAX_VALUE;
@@ -281,14 +307,6 @@ public void channeling() {
             }
         }
     }
-
-@Override
-public void activate(Player player, int level) {
-    active.add(player.getUniqueId());
-    
-    // Schedule the bat spawning with a 10-tick delay
-    Bukkit.getScheduler().runTaskLater(champions, () -> spawnBats(player, level), 5L);
-}
 
 
 
