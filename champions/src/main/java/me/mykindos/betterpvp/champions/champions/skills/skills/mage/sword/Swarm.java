@@ -109,11 +109,16 @@ public void channeling() {
         Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
         boolean hasActiveBats = batData.containsKey(player) && batData.get(player).stream().anyMatch(b -> b.getBat() != null && !b.getBat().isDead());
 
-        // Check if the player has stopped holding right-click
+        // Check if the player has stopped holding right click
         if (!gamer.isHoldingRightClick()) {
-            iterator.remove();
-            removeLeash(player);
-            continue;
+            if (hasActiveBats) {
+                // Don't remove the player from `active` yet; let them re-activate later
+                continue;
+            } else {
+                iterator.remove();
+                removeLeash(player);
+                continue;
+            }
         }
 
         int level = getLevel(player);
@@ -137,16 +142,10 @@ public void channeling() {
             continue;
         }
 
-        // Find the closest bat
         Bat closestBat = findClosestBat(player);
-
-        // Pull the player only if a valid bat is found
         if (closestBat != null) {
             pullPlayerTowardsBat(player, closestBat);
-            leashPlayerToBat(player, closestBat); // Optional: Only if you want the leash effect
-        } else {
-            // No valid bat found; remove leash
-            removeLeash(player);
+            leashPlayerToBat(player, closestBat);
         }
     }
 }
