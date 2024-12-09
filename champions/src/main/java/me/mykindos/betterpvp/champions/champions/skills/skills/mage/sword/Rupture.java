@@ -258,13 +258,14 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
     }
 
 private void createExplosionEffect(Location location, Material blockType) {
-    int numberOfDebris = 20; // Number of debris particles (you can adjust this to get more or fewer)
+    // Number of debris particles between 40 and 80
+    int numberOfDebris = UtilMath.randInt(40, 80);
     
     for (int i = 0; i < numberOfDebris; i++) {
         // Generate a random offset for debris location around the explosion point
         Location debrisLoc = location.clone().add(
                 UtilMath.randDouble(-0.5, 0.5), // Random X offset
-                UtilMath.randDouble(0.5, 1.0), // Random Y offset (to make some go upward)
+                UtilMath.randDouble(0.5, 1.0), // Random Y offset (to make some go upwards)
                 UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
         );
 
@@ -278,11 +279,13 @@ private void createExplosionEffect(Location location, Material blockType) {
                 UtilMath.randDouble(0.5, 1.0), // Random Y velocity to simulate debris going upwards
                 UtilMath.randDouble(-1.0, 1.0)  // Random Z velocity for explosion effect
         );
+
+        // Set the velocity to the thrown item
         debrisEntity.setVelocity(velocity);
 
         // Create a ThrowableItem instance with the random velocity
         ThrowableItem throwableItem = new ThrowableItem(
-                (ThrowableListener) this, debrisEntity, null, "RuptureDebris", 1000L // Lifetime in milliseconds
+                (ThrowableListener) this, debrisEntity, null, "ExplosionDebris", 1000L // Lifetime in milliseconds
         );
         throwableItem.setRemoveInWater(true); // Optional: Remove debris if it lands in water
         championsManager.getThrowables().addThrowable(throwableItem);
@@ -298,3 +301,4 @@ private void createExplosionEffect(Location location, Material blockType) {
         }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
     }
 }
+
