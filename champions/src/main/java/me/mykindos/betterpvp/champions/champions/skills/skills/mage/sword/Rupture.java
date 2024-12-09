@@ -265,16 +265,11 @@ private void createExplosionEffect(Location location, Material blockType) {
                 UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
         );
 
-        CustomArmourStand debrisStand = new CustomArmourStand(((CraftWorld) location.getWorld()).getHandle());
-        ArmorStand debris = (ArmorStand) debrisStand.spawn(debrisLoc);
-        debris.getEquipment().setItemInMainHand(new ItemStack(blockType)); // Set the block type in hand
-        debris.setGravity(true); // Enable gravity so it falls
-        debris.setSmall(true);
-        debris.setVisible(false);
-        debris.setPersistent(false);
-        debris.setHeadPose(new EulerAngle(
-                UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)
-        ));
+        // Create an ItemStack with the block type
+        ItemStack debrisItem = new ItemStack(blockType);
+
+        // Drop the item at the generated location
+        Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
 
         // Apply random velocity to simulate debris being thrown out
         Vector velocity = new Vector(
@@ -282,15 +277,19 @@ private void createExplosionEffect(Location location, Material blockType) {
                 UtilMath.randDouble(1.0, 1.0), // Y velocity
                 UtilMath.randDouble(-0.5, 0.5)  // Z velocity
         );
-        debris.setVelocity(velocity);
+        debrisEntity.setVelocity(velocity);
 
+        // Set a timer to remove the item after 1.4 seconds (28 ticks)
         new BukkitRunnable() {
             @Override
             public void run() {
-                debris.remove();
+                if (!debrisEntity.isDead()) {
+                    debrisEntity.remove();
+                }
             }
         }.runTaskLater(champions, 28);
     }
 }
+
 }
 
