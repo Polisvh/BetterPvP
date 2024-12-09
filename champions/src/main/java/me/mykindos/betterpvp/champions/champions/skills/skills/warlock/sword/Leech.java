@@ -252,6 +252,46 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         }
     }
 
+@UpdateEvent(delay = 125)
+public void display() {
+    // Check if there are active leech links
+    boolean isLeechActive = !leechData.isEmpty();
+
+    // If there are active leeches, show the radius with particles
+    if (isLeechActive) {
+        for (LeechData leech : leechData) {
+            if (leech.getLinkedTo() == null || leech.getTarget() == null || leech.getOwner() == null) {
+                continue;
+            }
+
+            Player owner = leech.getOwner();
+            int level = getLevel(owner);
+            double range = getRange(level);
+            Location loc = owner.getLocation();
+
+            // Display particles around the player in a circle, indicating the leech range
+            displayLeechRangeParticles(loc, range);
+        }
+    }
+}
+
+private void displayLeechRangeParticles(Location center, double radius) {
+    // Create particles in a circular pattern around the player
+    double increment = Math.PI / 16; // For smoothness of the circle, adjust the number for a larger or smaller circle
+    for (double angle = 0; angle < 2 * Math.PI; angle += increment) {
+        // Calculate the position of the particle in the circle
+        double x = radius * Math.cos(angle);
+        double z = radius * Math.sin(angle);
+
+        // Get the final position
+        Location particleLoc = center.clone().add(x, 0, z);
+
+        // Display the particle
+        Particle.DUST.builder().location(particleLoc).receivers(30).color(230, 0, 0).extra(0).spawn();
+    }
+}
+
+
     @UpdateEvent(delay = 1000)
     public void dealDamage() {
         for (LeechData leech : leechData) {
