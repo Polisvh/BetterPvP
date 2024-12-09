@@ -257,39 +257,42 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
         slowStrength = getConfig("slowStrength", 3, Integer.class);
     }
 
-private void createExplosionEffect(Location location, Material blockType) {
-    for (int i = 0; i < 15; i++) { // Number of debris particles
-        Location debrisLoc = location.clone().add(
-                UtilMath.randDouble(-0.5, 0.5), // Random X offset
-                UtilMath.randDouble(0.5, 1.0), // Random Y offset
-                UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
-        );
+    // New method for explosion effect
+    private void createExplosionEffect(Location location, Material blockType) {
+        for (int i = 0; i < 15; i++) { // Number of debris particles
+            Location debrisLoc = location.clone().add(
+                    UtilMath.randDouble(-0.6, 0.6), // Random X offset
+                    UtilMath.randDouble(0.5, 1.5), // Random Y offset
+                    UtilMath.randDouble(-0.6, 0.6)  // Random Z offset
+            );
 
-        // Create an ItemStack with the block type
-        ItemStack debrisItem = new ItemStack(blockType);
+            CustomArmourStand debrisStand = new CustomArmourStand(((CraftWorld) location.getWorld()).getHandle());
+            ArmorStand debris = (ArmorStand) debrisStand.spawn(debrisLoc);
+            debris.getEquipment().setHelmet(new ItemStack(blockType)); // Set the block type
+            debris.setGravity(true); // Enable gravity so it falls
+            debris.setSmall(true);
+            debris.setVisible(false);
+            debris.setPersistent(false);
+            debris.setHeadPose(new EulerAngle(
+                    UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)
+            ));
 
-        // Drop the item at the generated location
-        Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
+            // Apply random velocity to simulate debris being thrown out
+            Vector velocity = new Vector(
+                    UtilMath.randDouble(-0.5, 0.5), // X velocity
+                    UtilMath.randDouble(1.0, 1.0), // Y velocity
+                    UtilMath.randDouble(-0.5, 0.5)  // Z velocity
+            );
+            debris.setVelocity(velocity);
 
-        // Apply random velocity to simulate debris being thrown out
-        Vector velocity = new Vector(
-                UtilMath.randDouble(-0.5, 0.5), // X velocity
-                UtilMath.randDouble(1.0, 1.0), // Y velocity
-                UtilMath.randDouble(-0.5, 0.5)  // Z velocity
-        );
-        debrisEntity.setVelocity(velocity);
 
-        // Set a timer to remove the item after 1.4 seconds (28 ticks)
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!debrisEntity.isDead()) {
-                    debrisEntity.remove();
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    debris.remove();
                 }
-            }
-        }.runTaskLater(champions, 28);
+            }.runTaskLater(champions, 28);
+        }
     }
-}
-
 }
 
