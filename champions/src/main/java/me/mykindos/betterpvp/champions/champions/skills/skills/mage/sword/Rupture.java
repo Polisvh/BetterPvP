@@ -15,6 +15,8 @@ import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
 import me.mykindos.betterpvp.core.client.gamer.Gamer;
 import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
 import me.mykindos.betterpvp.core.combat.events.VelocityType;
+import me.mykindos.betterpvp.core.combat.throwables.ThrowableItem;
+import me.mykindos.betterpvp.core.combat.throwables.ThrowableListener;
 import me.mykindos.betterpvp.core.components.champions.Role;
 import me.mykindos.betterpvp.core.components.champions.SkillType;
 import me.mykindos.betterpvp.core.effects.EffectTypes;
@@ -34,6 +36,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -138,7 +141,7 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
             public void run() {
                 // If the player is holding right click, update the path based on the direction they are looking
                 Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
-                if (!gamer.isHoldingRightClick()){
+                if (!gamer.isHoldingRightClick()) {
                     // Get the current direction the player is looking
 
                     Vector lookDirection = player.getLocation().getDirection().normalize();
@@ -254,38 +257,41 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
     // New method for explosion effect
     private void createExplosionEffect(Location location, Material blockType) {
         for (int i = 0; i < 15; i++) { // Number of debris particles
+            // Generate a random offset for debris location
             Location debrisLoc = location.clone().add(
                     UtilMath.randDouble(-0.5, 0.5), // Random X offset
                     UtilMath.randDouble(0.5, 1.0), // Random Y offset
                     UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
             );
 
-            CustomArmourStand debrisStand = new CustomArmourStand(((CraftWorld) location.getWorld()).getHandle());
-            ArmorStand debris = (ArmorStand) debrisStand.spawn(debrisLoc);
-            debris.getEquipment().setHelmet(new ItemStack(blockType)); // Set the block type
-            debris.setGravity(true); // Enable gravity so it falls
-            debris.setSmall(true);
-            debris.setVisible(false);
-            debris.setPersistent(false);
-            debris.setHeadPose(new EulerAngle(
-                    UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)
-            ));
+            // Create the ThrowableItem representing debris
+            ItemStack debrisItem = new ItemStack(blockType);
+            Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
 
             // Apply random velocity to simulate debris being thrown out
             Vector velocity = new Vector(
                     UtilMath.randDouble(-0.5, 0.5), // X velocity
-                    UtilMath.randDouble(1.0, 1.0), // Y velocity
+                    UtilMath.randDouble(0.5, 1.0), // Y velocity
                     UtilMath.randDouble(-0.5, 0.5)  // Z velocity
             );
-            debris.setVelocity(velocity);
+            debrisEntity.setVelocity(velocity);
 
+            // Create a ThrowableItem instance
+            ThrowableItem throwableItem = new ThrowableItem(
+                    (ThrowableListener) this, debrisEntity, null, "RuptureDebris", 1000L // Lifetime in milliseconds
+            );
+            throwableItem.setRemoveInWater(true); // Optional: Remove debris if it lands in water
+            championsManager.getThrowables().addThrowable(throwableItem);
 
+            // Schedule removal of the debris after a short time
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    debris.remove();
+                    if (!debrisEntity.isDead()) {
+                        debrisEntity.remove();
+                    }
                 }
-            }.runTaskLater(champions, 28);
+            }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
         }
     }
 }
