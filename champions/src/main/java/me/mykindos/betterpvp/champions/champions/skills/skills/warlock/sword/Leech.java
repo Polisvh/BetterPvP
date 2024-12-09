@@ -219,62 +219,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         }
     }
 
-    @UpdateEvent(delay = 125)
-    public void display() {
-        for (LeechData leech : leechData) {
-            if (leech.getLinkedTo() == null || leech.getTarget() == null || leech.getOwner() == null) {
-                continue;
-            }
-
-            Location loc = leech.getLinkedTo().getLocation();
-            Vector v = leech.getTarget().getLocation().toVector().subtract(loc.toVector());
-            double distance = leech.getLinkedTo().getLocation().distance(leech.getTarget().getLocation());
-            int level = getLevel(leech.getOwner());
-            boolean remove = false;
-            if (distance > getRange(level)) continue;
-            for (double i = 0.5; i < distance; i += 0.5) {
-
-                v.multiply(i);
-                loc.add(v);
-                if (UtilBlock.solid(loc.getBlock()) && UtilBlock.solid(loc.clone().add(0, 1, 0).getBlock())) {
-                    remove = true;
-                }
-                Particle.DUST.builder().location(loc.clone().add(0, 0.7, 0)).receivers(30).color(230, 0, 0).extra(0).spawn();
-                loc.subtract(v);
-                v.normalize();
-
-            }
-
-            if (remove) {
-                removeList.add(leech);
-            }
-
-        }
-    }
-
-@UpdateEvent(delay = 125)
-public void display() {
-    // Check if there are active leech links
-    boolean isLeechActive = !leechData.isEmpty();
-
-    // If there are active leeches, show the radius with particles
-    if (isLeechActive) {
-        for (LeechData leech : leechData) {
-            if (leech.getLinkedTo() == null || leech.getTarget() == null || leech.getOwner() == null) {
-                continue;
-            }
-
-            Player owner = leech.getOwner();
-            int level = getLevel(owner);
-            double range = getRange(level);
-            Location loc = owner.getLocation();
-
-            // Display particles around the player in a circle, indicating the leech range
-            displayLeechRangeParticles(loc, range);
-        }
-    }
-}
-
 private void displayLeechRangeParticles(Location center, double radius) {
     // Create particles in a circular pattern around the player
     double increment = Math.PI / 16; // For smoothness of the circle, adjust the number for a larger or smaller circle
