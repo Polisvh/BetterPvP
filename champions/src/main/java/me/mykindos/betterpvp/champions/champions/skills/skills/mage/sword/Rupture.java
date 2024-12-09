@@ -301,4 +301,5 @@ private void createExplosionEffect(Location location, Material blockType) {
         }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
     }
 }
+}
 
