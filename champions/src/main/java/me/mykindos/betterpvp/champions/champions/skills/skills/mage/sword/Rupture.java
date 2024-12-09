@@ -250,7 +250,7 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
     }
 
     public void loadSkillConfig() {
-        baseDamage = getConfig("baseDamage", 5.0, Double.class);
+        baseDamage = getConfig("baseDamage", 4.0, Double.class);
         damageIncreasePerLevel = getConfig("damageIncreasePerLevel", 0.5, Double.class);
         baseSlowDuration = getConfig("baseSlowDuration", 1.5, Double.class);
         slowDurationIncreasePerLevel = getConfig("slowDurationIncreasePerLevel", 0.0, Double.class);
