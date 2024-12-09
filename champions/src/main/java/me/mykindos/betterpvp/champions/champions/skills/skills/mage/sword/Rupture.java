@@ -258,47 +258,38 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
     }
 
 private void createExplosionEffect(Location location, Material blockType) {
-    // Number of debris particles between 40 and 80
-    int numberOfDebris = UtilMath.randomInt(40, 80);
-    
-    for (int i = 0; i < numberOfDebris; i++) {
-        // Generate a random offset for debris location around the explosion point
+    for (int i = 0; i < 15; i++) { // Number of debris particles
         Location debrisLoc = location.clone().add(
                 UtilMath.randDouble(-0.5, 0.5), // Random X offset
-                UtilMath.randDouble(0.5, 1.0), // Random Y offset (to make some go upwards)
+                UtilMath.randDouble(0.5, 1.0), // Random Y offset
                 UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
         );
 
-        // Create the ThrowableItem representing debris
-        ItemStack debrisItem = new ItemStack(blockType);
-        Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
+        CustomArmourStand debrisStand = new CustomArmourStand(((CraftWorld) location.getWorld()).getHandle());
+        ArmorStand debris = (ArmorStand) debrisStand.spawn(debrisLoc);
+        debris.getEquipment().setItemInMainHand(new ItemStack(blockType)); // Set the block type in hand
+        debris.setGravity(true); // Enable gravity so it falls
+        debris.setSmall(true);
+        debris.setVisible(false);
+        debris.setPersistent(false);
+        debris.setHeadPose(new EulerAngle(
+                UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)
+        ));
 
-        // Apply random velocity to simulate debris being thrown out in all directions
+        // Apply random velocity to simulate debris being thrown out
         Vector velocity = new Vector(
-                UtilMath.randDouble(-1.0, 1.0), // Random X velocity for explosion effect
-                UtilMath.randDouble(0.5, 1.0), // Random Y velocity to simulate debris going upwards
-                UtilMath.randDouble(-1.0, 1.0)  // Random Z velocity for explosion effect
+                UtilMath.randDouble(-0.5, 0.5), // X velocity
+                UtilMath.randDouble(1.0, 1.0), // Y velocity
+                UtilMath.randDouble(-0.5, 0.5)  // Z velocity
         );
+        debris.setVelocity(velocity);
 
-        // Set the velocity to the thrown item
-        debrisEntity.setVelocity(velocity);
-
-        // Create a ThrowableItem instance with the random velocity
-        ThrowableItem throwableItem = new ThrowableItem(
-                (ThrowableListener) this, debrisEntity, null, "ExplosionDebris", 1000L // Lifetime in milliseconds
-        );
-        throwableItem.setRemoveInWater(true); // Optional: Remove debris if it lands in water
-        championsManager.getThrowables().addThrowable(throwableItem);
-
-        // Schedule removal of the debris after a short time (28 ticks = ~1.4 seconds)
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!debrisEntity.isDead()) {
-                    debrisEntity.remove();
-                }
+                debris.remove();
             }
-        }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
+        }.runTaskLater(champions, 28);
     }
 }
 }
