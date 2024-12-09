@@ -257,44 +257,44 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
         slowStrength = getConfig("slowStrength", 3, Integer.class);
     }
 
-    // New method for explosion effect
-    private void createExplosionEffect(Location location, Material blockType) {
-        for (int i = 0; i < 15; i++) { // Number of debris particles
-            // Generate a random offset for debris location
-            Location debrisLoc = location.clone().add(
-                    UtilMath.randDouble(-0.5, 0.5), // Random X offset
-                    UtilMath.randDouble(0.5, 1.0), // Random Y offset
-                    UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
-            );
+private void createExplosionEffect(Location location, Material blockType) {
+    int numberOfDebris = 20; // Number of debris particles (you can adjust this to get more or fewer)
+    
+    for (int i = 0; i < numberOfDebris; i++) {
+        // Generate a random offset for debris location around the explosion point
+        Location debrisLoc = location.clone().add(
+                UtilMath.randDouble(-0.5, 0.5), // Random X offset
+                UtilMath.randDouble(0.5, 1.0), // Random Y offset (to make some go upward)
+                UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
+        );
 
-            // Create the ThrowableItem representing debris
-            ItemStack debrisItem = new ItemStack(blockType);
-            Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
+        // Create the ThrowableItem representing debris
+        ItemStack debrisItem = new ItemStack(blockType);
+        Item debrisEntity = location.getWorld().dropItem(debrisLoc, debrisItem);
 
-            // Apply random velocity to simulate debris being thrown out
-            Vector velocity = new Vector(
-                    UtilMath.randDouble(-0.5, 0.5), // X velocity
-                    UtilMath.randDouble(0.5, 1.0), // Y velocity
-                    UtilMath.randDouble(-0.5, 0.5)  // Z velocity
-            );
-            debrisEntity.setVelocity(velocity);
+        // Apply random velocity to simulate debris being thrown out in all directions
+        Vector velocity = new Vector(
+                UtilMath.randDouble(-1.0, 1.0), // Random X velocity for explosion effect
+                UtilMath.randDouble(0.5, 1.0), // Random Y velocity to simulate debris going upwards
+                UtilMath.randDouble(-1.0, 1.0)  // Random Z velocity for explosion effect
+        );
+        debrisEntity.setVelocity(velocity);
 
-            // Create a ThrowableItem instance
-            ThrowableItem throwableItem = new ThrowableItem(
-                    (ThrowableListener) this, debrisEntity, null, "RuptureDebris", 1000L // Lifetime in milliseconds
-            );
-            throwableItem.setRemoveInWater(true); // Optional: Remove debris if it lands in water
-            championsManager.getThrowables().addThrowable(throwableItem);
+        // Create a ThrowableItem instance with the random velocity
+        ThrowableItem throwableItem = new ThrowableItem(
+                (ThrowableListener) this, debrisEntity, null, "RuptureDebris", 1000L // Lifetime in milliseconds
+        );
+        throwableItem.setRemoveInWater(true); // Optional: Remove debris if it lands in water
+        championsManager.getThrowables().addThrowable(throwableItem);
 
-            // Schedule removal of the debris after a short time
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!debrisEntity.isDead()) {
-                        debrisEntity.remove();
-                    }
+        // Schedule removal of the debris after a short time (28 ticks = ~1.4 seconds)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!debrisEntity.isDead()) {
+                    debrisEntity.remove();
                 }
-            }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
-        }
+            }
+        }.runTaskLater(champions, 28); // 28 ticks (~1.4 seconds)
     }
 }
