@@ -139,7 +139,9 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
 
     @Override
     public void run() {
-        // If the player is holding right-click, update the path's direction
+
+        Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
+
         if (gamer.isHoldingRightClick()) {
             Vector lookDirection = player.getLocation().getDirection().normalize();
             lookDirection.setY(0);  // Make sure to keep the movement horizontal
