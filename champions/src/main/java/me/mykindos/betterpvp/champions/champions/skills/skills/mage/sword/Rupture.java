@@ -4,10 +4,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import me.mykindos.betterpvp.champions.Champions;
 import me.mykindos.betterpvp.champions.champions.ChampionsManager;
-import me.mykindos.betterpvp.champions.champions.skills.Skill;
 import me.mykindos.betterpvp.champions.champions.skills.data.SkillActions;
 import me.mykindos.betterpvp.champions.champions.skills.types.AreaOfEffectSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.ChannelSkill;
+import me.mykindos.betterpvp.champions.champions.skills.types.EnergyChannelSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.CooldownSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.DamageSkill;
 import me.mykindos.betterpvp.champions.champions.skills.types.DebuffSkill;
@@ -15,8 +15,6 @@ import me.mykindos.betterpvp.champions.champions.skills.types.InteractSkill;
 import me.mykindos.betterpvp.core.client.gamer.Gamer;
 import me.mykindos.betterpvp.core.combat.events.CustomDamageEvent;
 import me.mykindos.betterpvp.core.combat.events.VelocityType;
-import me.mykindos.betterpvp.core.combat.throwables.ThrowableItem;
-import me.mykindos.betterpvp.core.combat.throwables.ThrowableListener;
 import me.mykindos.betterpvp.core.components.champions.Role;
 import me.mykindos.betterpvp.core.components.champions.SkillType;
 import me.mykindos.betterpvp.core.effects.EffectTypes;
@@ -30,13 +28,10 @@ import me.mykindos.betterpvp.core.utilities.UtilFormat;
 import me.mykindos.betterpvp.core.utilities.UtilMath;
 import me.mykindos.betterpvp.core.utilities.UtilVelocity;
 import me.mykindos.betterpvp.core.utilities.math.VelocityData;
-import org.bukkit.Effect;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -49,11 +44,13 @@ import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 @Singleton
 @BPvPListener
-public class Rupture extends Skill implements Listener, InteractSkill, CooldownSkill, AreaOfEffectSkill, DebuffSkill, DamageSkill {
+public class Rupture extends ChannelSkill implements Listener, InteractSkill, CooldownSkill, EnergyChannelSkill, AreaOfEffectSkill, DebuffSkill, DamageSkill {
 
     private final WeakHashMap<Player, ArrayList<LivingEntity>> cooldownJump = new WeakHashMap<>();
     private final WeakHashMap<ArmorStand, Long> stands = new WeakHashMap<>();
@@ -111,6 +108,12 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
         return SkillType.SWORD;
     }
 
+    @Override
+    public float getEnergy(int level) {
+        return (float) (energy - ((level - 1) * energyDecreasePerLevel));
+    }
+
+
     @UpdateEvent
     public void onUpdate() {
         stands.entrySet().removeIf(entry -> {
@@ -120,6 +123,31 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
             }
             return false;
         });
+        final Iterator<UUID> iterator = active.iterator();
+        while (iterator.hasNext()) {
+            Player player = Bukkit.getPlayer(iterator.next());
+            if (player == null) {
+                iterator.remove();
+                continue;
+            }
+
+            Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
+            if (!gamer.isHoldingRightClick()) {
+                iterator.remove();
+                continue;
+            }
+
+            int level = getLevel(player);
+            if (level <= 0) {
+                iterator.remove();
+            } else if (!championsManager.getEnergy().use(player, getName(), getEnergy(level) / 20, true)) {
+                iterator.remove();
+            } else if (!isHolding(player)) {
+                iterator.remove();
+            } else {
+                activate(player, level);
+            }
+        }
     }
 
     @Override
@@ -129,6 +157,7 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
 
     @Override
     public void activate(Player player, int level) {
+        active.add(player.getUniqueId());
         final Vector[] vector = {player.getLocation().getDirection().normalize().multiply(0.3D)};
         vector[0].setY(0);
         final Location loc = player.getLocation().subtract(0.0D, 1.0D, 0.0D).add(vector[0]);
@@ -136,103 +165,96 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
         cooldownJump.put(player, new ArrayList<>());
 
         final BukkitTask runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
 
-    @Override
-    public void run() {
+                if (gamer.isHoldingRightClick()) {
+                    // Player is holding right-click, continue rendering path
+                    Vector lookDirection = player.getLocation().getDirection().normalize();
+                    lookDirection.setY(0);  // Make sure to keep the movement horizontal
+                    vector[0] = lookDirection.multiply(0.3D);
 
-        Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
+                    // Continue path movement and rendering
+                    for (int i = 0; i < 3; i++) {
+                        if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
+                            loc.add(0.0D, 1.0D, 0.0D);
+                        }
+                    }
 
-        if (gamer.isHoldingRightClick()) {
-            Vector lookDirection = player.getLocation().getDirection().normalize();
-            lookDirection.setY(0);  // Make sure to keep the movement horizontal
-            vector[0] = lookDirection.multiply(0.3D);
-        }
+                    if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
+                        cancel();
+                        return;
+                    }
 
-        // Continue the path even if the player is not holding right-click
-        for (int i = 0; i < 3; i++) {
-            if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
-                loc.add(0.0D, 1.0D, 0.0D);
-            }
-        }
+                    if (loc.getBlock().getType().name().contains("DOOR")) {
+                        cancel();
+                        return;
+                    }
 
-        if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
-            cancel();
-            return;
-        }
+                    if ((loc.clone().add(0.0D, -1.0D, 0.0D).getBlock().getType() == Material.AIR)) {
+                        Block halfBlock = loc.clone().add(0, -0.5, 0).getBlock();
+                        if (!halfBlock.getType().name().contains("SLAB") && !halfBlock.getType().name().contains("STAIR")) {
+                            loc.add(0.0D, -1.0D, 0.0D);
+                        }
+                    }
 
-        if (loc.getBlock().getType().name().contains("DOOR")) {
-            cancel();
-            return;
-        }
+                    for (int i = 0; i < 3; i++) {
+                        loc.add(vector[0]);
+                        Location tempLoc = new Location(player.getWorld(), loc.getX() + UtilMath.randDouble(-1.5D, 1.5D), loc.getY() + UtilMath.randDouble(0.3D, 0.8D) - 0.75,
+                                loc.getZ() + UtilMath.randDouble(-1.5D, 1.5D));
 
-        if ((loc.clone().add(0.0D, -1.0D, 0.0D).getBlock().getType() == Material.AIR)) {
-            Block halfBlock = loc.clone().add(0, -0.5, 0).getBlock();
-            if (!halfBlock.getType().name().contains("SLAB") && !halfBlock.getType().name().contains("STAIR")) {
-                loc.add(0.0D, -1.0D, 0.0D);
-            }
-        }
+                        Block nearestSolidBlock = getNearestSolidBlock(loc);
+                        if (nearestSolidBlock == null) {
+                            cancel();
+                            return;
+                        }
 
-        for (int i = 0; i < 3; i++) {
-            loc.add(vector[0]);
-            Location tempLoc = new Location(player.getWorld(), loc.getX() + UtilMath.randDouble(-1.5D, 1.5D), loc.getY() + UtilMath.randDouble(0.3D, 0.8D) - 0.75,
-                    loc.getZ() + UtilMath.randDouble(-1.5D, 1.5D));
+                        CustomArmourStand as = new CustomArmourStand(((CraftWorld) loc.getWorld()).getHandle());
+                        ArmorStand armourStand = (ArmorStand) as.spawn(tempLoc);
+                        armourStand.getEquipment().setHelmet(new ItemStack(nearestSolidBlock.getType()));
+                        armourStand.setGravity(false);
+                        armourStand.setVisible(false);
+                        armourStand.setSmall(true);
+                        armourStand.setPersistent(false);
+                        armourStand.setHeadPose(new EulerAngle(UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)));
 
-            Block nearestSolidBlock = getNearestSolidBlock(loc);
-            if (nearestSolidBlock == null) {
-                cancel();
-                return;
-            }
+                        player.getWorld().playEffect(loc, Effect.STEP_SOUND, nearestSolidBlock.getType());
 
-            CustomArmourStand as = new CustomArmourStand(((CraftWorld) loc.getWorld()).getHandle());
-            ArmorStand armourStand = (ArmorStand) as.spawn(tempLoc);
-            armourStand.getEquipment().setHelmet(new ItemStack(nearestSolidBlock.getType()));
-            armourStand.setGravity(false);
-            armourStand.setVisible(false);
-            armourStand.setSmall(true);
-            armourStand.setPersistent(false);
-            armourStand.setHeadPose(new EulerAngle(UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)));
+                        stands.put(armourStand, System.currentTimeMillis() + 4000);
 
-            player.getWorld().playEffect(loc, Effect.STEP_SOUND, nearestSolidBlock.getType());
+                        // Schedule the individual removal of this ArmorStand after 1 second (20 ticks)
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                armourStand.remove();
+                            }
+                        }.runTaskLater(champions, 14);
+                    }
+                } else {
+                    cancel();
+                    Location finalLoc = loc.clone();
+                    Block nearestSolidBlock = getNearestSolidBlock(finalLoc);
+                    createExplosionEffect(finalLoc, nearestSolidBlock != null ? nearestSolidBlock.getType() : Material.AIR, player, level);
 
-            stands.put(armourStand, System.currentTimeMillis() + 4000);
-
-            // Schedule the individual removal of this ArmorStand after 1 second (20 ticks)
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    armourStand.remove();
-                }
-            }.runTaskLater(champions, 14);
-
-            for (LivingEntity ent : UtilEntity.getNearbyEnemies(player, armourStand.getLocation(), 1)) {
-                if (!cooldownJump.get(player).contains(ent)) {
-
-                    Vector knockbackDirection = player.getLocation().getDirection().multiply(-1).normalize();
-                    VelocityData velocityData = new VelocityData(knockbackDirection, -1.25, false, 0.0, 1.0, 2.0, false);
-                    UtilVelocity.velocity(ent, player, velocityData, VelocityType.CUSTOM);
-
-                    championsManager.getEffects().addEffect(ent, player, EffectTypes.SLOWNESS, slowStrength, (long) (getSlowDuration(level) * 1000L));
-                    UtilDamage.doCustomDamage(new CustomDamageEvent(ent, player, null, DamageCause.CUSTOM, getDamage(level), false, getName()));
-
-                    // Trigger explosion effect
-                    createExplosionEffect(ent.getLocation(), nearestSolidBlock.getType());
-
-                    cooldownJump.get(player).add(ent);
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            cooldownJump.remove(player);
+                        }
+                    }.runTaskLater(champions, (long) (getCooldown(level) * 20));
                 }
             }
-        }
-    }
-}.runTaskTimer(champions, 0, 2);
-
+        }.runTaskTimer(champions, 0, 2); // Runs every 2 ticks
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                runnable.cancel();
-                cooldownJump.get(player).clear();
+                runnable.cancel(); // Cancel the main path rendering task after 40 ticks
             }
         }.runTaskLater(champions, 40);
     }
+
 
     private Block getNearestSolidBlock(Location location) {
         for (int y = 0; y < location.getY(); y++) {
@@ -255,10 +277,13 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
         baseSlowDuration = getConfig("baseSlowDuration", 1.5, Double.class);
         slowDurationIncreasePerLevel = getConfig("slowDurationIncreasePerLevel", 0.0, Double.class);
         slowStrength = getConfig("slowStrength", 3, Integer.class);
+        energy = getConfig("energy", 80, Integer.class);
+        energyDecreasePerLevel = getConfig("energyDecreasePerLevel", 5, Integer.class);
+
     }
 
-    // New method for explosion effect
-    private void createExplosionEffect(Location location, Material blockType) {
+    private void createExplosionEffect(Location location, Material blockType, Player player, int level) {
+        // Loop to create debris particles
         for (int i = 0; i < 15; i++) { // Number of debris particles
             Location debrisLoc = location.clone().add(
                     UtilMath.randDouble(-0.5, 0.5), // Random X offset
@@ -285,14 +310,31 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
             );
             debris.setVelocity(velocity);
 
-
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     debris.remove();
                 }
             }.runTaskLater(champions, 28);
+
+            // Apply effects to nearby enemies within range
+            for (LivingEntity ent : UtilEntity.getNearbyEnemies(player, debris.getLocation(), 1)) {
+                if (!cooldownJump.get(player).contains(ent)) {
+
+                    Vector knockbackDirection = player.getLocation().getDirection().multiply(-1).normalize();
+                    VelocityData velocityData = new VelocityData(knockbackDirection, -1.25, false, 0.0, 1.0, 2.0, false);
+                    UtilVelocity.velocity(ent, player, velocityData, VelocityType.CUSTOM);
+
+                    // Apply Slowness effect
+                    championsManager.getEffects().addEffect(ent, player, EffectTypes.SLOWNESS, slowStrength, (long) (getSlowDuration(level) * 1000L));
+
+                    // Apply custom damage
+                    UtilDamage.doCustomDamage(new CustomDamageEvent(ent, player, null, DamageCause.CUSTOM, getDamage(level), false, getName()));
+
+                    // Add the enemy to cooldown list
+                    cooldownJump.get(player).add(ent);
+                }
+            }
         }
     }
 }
-
