@@ -137,91 +137,91 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
 
         final BukkitTask runnable = new BukkitRunnable() {
 
-            @Override
-            public void run() {
-                // If the player is holding right click, update the path based on the direction they are looking
-                Gamer gamer = championsManager.getClientManager().search().online(player).getGamer();
-                if (!gamer.isHoldingRightClick()) {
-                    // Get the current direction the player is looking
+    @Override
+    public void run() {
+        // If the player is holding right-click, update the path's direction
+        if (gamer.isHoldingRightClick()) {
+            Vector lookDirection = player.getLocation().getDirection().normalize();
+            lookDirection.setY(0);  // Make sure to keep the movement horizontal
+            vector[0] = lookDirection.multiply(0.3D);
+        }
 
-                    Vector lookDirection = player.getLocation().getDirection().normalize();
-                    lookDirection.setY(0);  // Make sure to keep the movement horizontal
-                    vector[0] = lookDirection.multiply(0.3D);
-                } else {
-                for (int i = 0; i < 3; i++) {
-                    if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
-                        loc.add(0.0D, 1.0D, 0.0D);
-                    }
+        // Continue the path even if the player is not holding right-click
+        for (int i = 0; i < 3; i++) {
+            if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
+                loc.add(0.0D, 1.0D, 0.0D);
+            }
+        }
+
+        if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
+            cancel();
+            return;
+        }
+
+        if (loc.getBlock().getType().name().contains("DOOR")) {
+            cancel();
+            return;
+        }
+
+        if ((loc.clone().add(0.0D, -1.0D, 0.0D).getBlock().getType() == Material.AIR)) {
+            Block halfBlock = loc.clone().add(0, -0.5, 0).getBlock();
+            if (!halfBlock.getType().name().contains("SLAB") && !halfBlock.getType().name().contains("STAIR")) {
+                loc.add(0.0D, -1.0D, 0.0D);
+            }
+        }
+
+        for (int i = 0; i < 3; i++) {
+            loc.add(vector[0]);
+            Location tempLoc = new Location(player.getWorld(), loc.getX() + UtilMath.randDouble(-1.5D, 1.5D), loc.getY() + UtilMath.randDouble(0.3D, 0.8D) - 0.75,
+                    loc.getZ() + UtilMath.randDouble(-1.5D, 1.5D));
+
+            Block nearestSolidBlock = getNearestSolidBlock(loc);
+            if (nearestSolidBlock == null) {
+                cancel();
+                return;
+            }
+
+            CustomArmourStand as = new CustomArmourStand(((CraftWorld) loc.getWorld()).getHandle());
+            ArmorStand armourStand = (ArmorStand) as.spawn(tempLoc);
+            armourStand.getEquipment().setHelmet(new ItemStack(nearestSolidBlock.getType()));
+            armourStand.setGravity(false);
+            armourStand.setVisible(false);
+            armourStand.setSmall(true);
+            armourStand.setPersistent(false);
+            armourStand.setHeadPose(new EulerAngle(UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)));
+
+            player.getWorld().playEffect(loc, Effect.STEP_SOUND, nearestSolidBlock.getType());
+
+            stands.put(armourStand, System.currentTimeMillis() + 4000);
+
+            // Schedule the individual removal of this ArmorStand after 1 second (20 ticks)
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    armourStand.remove();
                 }
-                if ((!UtilBlock.airFoliage(loc.getBlock())) && UtilBlock.solid(loc.getBlock())) {
-                    cancel();
-                    return;
-                }
+            }.runTaskLater(champions, 14);
 
-                if (loc.getBlock().getType().name().contains("DOOR")) {
-                    cancel();
-                    return;
-                }
+            for (LivingEntity ent : UtilEntity.getNearbyEnemies(player, armourStand.getLocation(), 1)) {
+                if (!cooldownJump.get(player).contains(ent)) {
 
-                if ((loc.clone().add(0.0D, -1.0D, 0.0D).getBlock().getType() == Material.AIR)) {
-                    Block halfBlock = loc.clone().add(0, -0.5, 0).getBlock();
-                    if (!halfBlock.getType().name().contains("SLAB") && !halfBlock.getType().name().contains("STAIR")) {
-                        loc.add(0.0D, -1.0D, 0.0D);
-                    }
-                }
+                    Vector knockbackDirection = player.getLocation().getDirection().multiply(-1).normalize();
+                    VelocityData velocityData = new VelocityData(knockbackDirection, -1.25, false, 0.0, 1.0, 2.0, false);
+                    UtilVelocity.velocity(ent, player, velocityData, VelocityType.CUSTOM);
 
-                for (int i = 0; i < 3; i++) {
-                    loc.add(vector[0]);
-                    Location tempLoc = new Location(player.getWorld(), loc.getX() + UtilMath.randDouble(-1.5D, 1.5D), loc.getY() + UtilMath.randDouble(0.3D, 0.8D) - 0.75,
-                            loc.getZ() + UtilMath.randDouble(-1.5D, 1.5D));
+                    championsManager.getEffects().addEffect(ent, player, EffectTypes.SLOWNESS, slowStrength, (long) (getSlowDuration(level) * 1000L));
+                    UtilDamage.doCustomDamage(new CustomDamageEvent(ent, player, null, DamageCause.CUSTOM, getDamage(level), false, getName()));
 
-                    Block nearestSolidBlock = getNearestSolidBlock(loc);
-                    if (nearestSolidBlock == null) {
-                        cancel();
-                        return;
-                    }
+                    // Trigger explosion effect
+                    createExplosionEffect(ent.getLocation(), nearestSolidBlock.getType());
 
-                    CustomArmourStand as = new CustomArmourStand(((CraftWorld) loc.getWorld()).getHandle());
-                    ArmorStand armourStand = (ArmorStand) as.spawn(tempLoc);
-                    armourStand.getEquipment().setHelmet(new ItemStack(nearestSolidBlock.getType()));
-                    armourStand.setGravity(false);
-                    armourStand.setVisible(false);
-                    armourStand.setSmall(true);
-                    armourStand.setPersistent(false);
-                    armourStand.setHeadPose(new EulerAngle(UtilMath.randomInt(360), UtilMath.randomInt(360), UtilMath.randomInt(360)));
-
-                    player.getWorld().playEffect(loc, Effect.STEP_SOUND, nearestSolidBlock.getType());
-
-                    stands.put(armourStand, System.currentTimeMillis() + 4000);
-
-                    // Schedule the individual removal of this ArmorStand after 1 second (20 ticks)
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            armourStand.remove();
-                        }
-                    }.runTaskLater(champions, 14);
-
-                    for (LivingEntity ent : UtilEntity.getNearbyEnemies(player, armourStand.getLocation(), 1)) {
-                        if (!cooldownJump.get(player).contains(ent)) {
-
-                            Vector knockbackDirection = player.getLocation().getDirection().multiply(-1).normalize();
-                            VelocityData velocityData = new VelocityData(knockbackDirection, -1.25, false, 0.0, 1.0, 2.0, false);
-                            UtilVelocity.velocity(ent, player, velocityData, VelocityType.CUSTOM);
-
-                            championsManager.getEffects().addEffect(ent, player, EffectTypes.SLOWNESS, slowStrength, (long) (getSlowDuration(level) * 1000L));
-                            UtilDamage.doCustomDamage(new CustomDamageEvent(ent, player, null, DamageCause.CUSTOM, getDamage(level), false, getName()));
-
-                            // Trigger explosion effect
-                            createExplosionEffect(ent.getLocation(), nearestSolidBlock.getType());
-
-                            cooldownJump.get(player).add(ent);
-                        }
-                    }
+                    cooldownJump.get(player).add(ent);
                 }
             }
         }
-        }.runTaskTimer(champions, 0, 2);
+    }
+}.runTaskTimer(champions, 0, 2);
+
 
         new BukkitRunnable() {
             @Override
