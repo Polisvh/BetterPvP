@@ -261,9 +261,9 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
     private void createExplosionEffect(Location location, Material blockType) {
         for (int i = 0; i < 15; i++) { // Number of debris particles
             Location debrisLoc = location.clone().add(
-                    UtilMath.randDouble(-0.6, 0.6), // Random X offset
-                    UtilMath.randDouble(0.5, 1.5), // Random Y offset
-                    UtilMath.randDouble(-0.6, 0.6)  // Random Z offset
+                    UtilMath.randDouble(-0.5, 0.5), // Random X offset
+                    UtilMath.randDouble(0.5, 1.0), // Random Y offset
+                    UtilMath.randDouble(-0.5, 0.5)  // Random Z offset
             );
 
             CustomArmourStand debrisStand = new CustomArmourStand(((CraftWorld) location.getWorld()).getHandle());
@@ -279,9 +279,9 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
 
             // Apply random velocity to simulate debris being thrown out
             Vector velocity = new Vector(
-                    UtilMath.randDouble(-0.5, 0.5), // X velocity
-                    UtilMath.randDouble(1.0, 1.0), // Y velocity
-                    UtilMath.randDouble(-0.5, 0.5)  // Z velocity
+                    UtilMath.randDouble(-0.75, 0.75), // X velocity
+                    UtilMath.randDouble(0.5, 1.5), // Y velocity
+                    UtilMath.randDouble(-0.75, 0.75)  // Z velocity
             );
             debris.setVelocity(velocity);
 
