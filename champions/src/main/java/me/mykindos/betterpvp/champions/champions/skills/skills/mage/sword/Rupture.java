@@ -50,7 +50,6 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.WeakHashMap;
-import java.util.Random;
 
 @Singleton
 @BPvPListener
@@ -260,7 +259,7 @@ public class Rupture extends Skill implements Listener, InteractSkill, CooldownS
 
 private void createExplosionEffect(Location location, Material blockType) {
     // Number of debris particles between 40 and 80
-    int numberOfDebris = UtilMath.randInt(40, 80);
+    int numberOfDebris = UtilMath.randomInt(40, 80);
     
     for (int i = 0; i < numberOfDebris; i++) {
         // Generate a random offset for debris location around the explosion point
