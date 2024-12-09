@@ -55,7 +55,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         super(champions, championsManager);
     }
 
-
     @Override
     public String getName() {
         return "Leech";
@@ -88,7 +87,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         return Role.WARLOCK;
     }
 
-
     @EventHandler
     public void onDamage(CustomDamageEvent event) {
         if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
@@ -104,7 +102,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
             championsManager.getCooldowns().removeCooldown(damager, getName(), true);
             championsManager.getCooldowns().use(damager, getName(), getCooldown(level), showCooldownFinished());
         }
-
     }
 
     private void chainEnemies(Player player, LivingEntity link) {
@@ -121,7 +118,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
                 currentLinked++;
             }
         }
-
     }
 
     private void removeLinks(LivingEntity link) {
@@ -164,7 +160,6 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         return true;
     }
 
-
     @Override
     public SkillType getType() {
         return SkillType.SWORD;
@@ -193,48 +188,37 @@ public class Leech extends PrepareSkill implements CooldownSkill, HealthSkill, O
         }
     }
 
-    @UpdateEvent(delay = 250)
-    public void chain() {
+    @UpdateEvent(delay = 100)  // Update every 100 ticks (5 seconds)
+    public void displayLeechRange() {
+        // Loop through all active leech data
         for (LeechData leech : leechData) {
-            if (leech.getLinkedTo() == null || leech.getTarget() == null || leech.getOwner() == null) {
-                removeList.add(leech);
-                continue;
-            }
+            if (leech.getOwner() != null) {
+                // Get the player's location and range
+                int level = getLevel(leech.getOwner());
+                double range = getRange(level);
+                Location loc = leech.getOwner().getLocation();
 
-            if (leech.getLinkedTo().isDead() || leech.getOwner().isDead()) {
-                if (leech.getOwner().isDead()) {
-                    breakChain(leech);
-                }
-                removeList.add(leech);
-                continue;
+                // Display particles indicating the leech range around the player
+                displayLeechRangeParticles(loc, range);
             }
-            int level = getLevel(leech.getOwner());
-            if (leech.getTarget().getLocation().distance(leech.getLinkedTo().getLocation()) > getRange(level)) {
-                if (leech.getLinkedTo().getUniqueId().equals(leech.getOwner().getUniqueId())) {
-                    breakChain(leech);
-                }
-                removeList.add(leech);
-            }
-
         }
     }
 
-private void displayLeechRangeParticles(Location center, double radius) {
-    // Create particles in a circular pattern around the player
-    double increment = Math.PI / 16; // For smoothness of the circle, adjust the number for a larger or smaller circle
-    for (double angle = 0; angle < 2 * Math.PI; angle += increment) {
-        // Calculate the position of the particle in the circle
-        double x = radius * Math.cos(angle);
-        double z = radius * Math.sin(angle);
+    private void displayLeechRangeParticles(Location center, double radius) {
+        // Create particles in a circular pattern around the player
+        double increment = Math.PI / 16; // For smoothness of the circle, adjust the number for a larger or smaller circle
+        for (double angle = 0; angle < 2 * Math.PI; angle += increment) {
+            // Calculate the position of the particle in the circle
+            double x = radius * Math.cos(angle);
+            double z = radius * Math.sin(angle);
 
-        // Get the final position
-        Location particleLoc = center.clone().add(x, 0, z);
+            // Get the final position
+            Location particleLoc = center.clone().add(x, 0, z);
 
-        // Display the particle
-        Particle.DUST.builder().location(particleLoc).receivers(30).color(230, 0, 0).extra(0).spawn();
+            // Display the particle
+            Particle.DUST.builder().location(particleLoc).receivers(30).color(230, 0, 0).extra(0).spawn();
+        }
     }
-}
-
 
     @UpdateEvent(delay = 1000)
     public void dealDamage() {
@@ -285,11 +269,8 @@ private void displayLeechRangeParticles(Location center, double radius) {
     @Data
     private static class LeechData {
         private final Player owner;
-
         private final LivingEntity linkedTo;
         private final LivingEntity target;
-
     }
-
-
 }
+
